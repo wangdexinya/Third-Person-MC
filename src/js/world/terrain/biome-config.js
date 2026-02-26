@@ -19,8 +19,8 @@ export const BIOMES = {
     name: '平原',
     // Climate parameters (for biome generator)
     // Adjusting ranges to be more specific, utilizing the fallback mechanism for gaps
-    tempRange: [0.4, 0.6],
-    humidityRange: [0.35, 0.55], // Slightly narrower humidity to allow overlap handling
+    tempRange: [0.3, 0.6],
+    humidityRange: [0.2, 0.5],
     // 地形参数（用于后续生成器）
     terrainParams: {
       heightOffset: 0, // 高度偏移（相对基准）
@@ -66,8 +66,8 @@ export const BIOMES = {
     id: 'forest',
     name: '森林',
     // Climate parameters
-    tempRange: [0.3, 0.7], // Broaden temp range
-    humidityRange: [0.55, 0.95], // High humidity, lower floor to catch more area
+    tempRange: [0.3, 0.6],
+    humidityRange: [0.5, 1.0],
     terrainParams: {
       heightOffset: 0, // 略高
       heightMagnitude: 3.0, // 正常振幅
@@ -112,8 +112,8 @@ export const BIOMES = {
     id: 'birchForest',
     name: '白桦木林',
     // Climate parameters
-    tempRange: [0.1, 0.45], // Extend deeper into cold and slightly towards medium
-    humidityRange: [0.3, 0.7], // Moderate humidity
+    tempRange: [0.0, 0.3],
+    humidityRange: [0.2, 0.5],
     terrainParams: {
       heightOffset: 0, // 略高
       heightMagnitude: 1.5, // 中等偏小
@@ -156,8 +156,8 @@ export const BIOMES = {
     id: 'cherryForest',
     name: '樱花树林',
     // Climate parameters
-    tempRange: [0.5, 0.75],
-    humidityRange: [0.5, 0.85],
+    tempRange: [0.6, 1.0],
+    humidityRange: [0.5, 1.0],
     terrainParams: {
       heightOffset: 0, // 基准
       heightMagnitude: 3.0, // 中等
@@ -200,8 +200,8 @@ export const BIOMES = {
     id: 'desert',
     name: '沙漠',
     // Climate parameters
-    tempRange: [0.6, 1.0], // Start closer to center (0.6) to appear more often
-    humidityRange: [0.0, 0.45], // Allow a bit more humidity
+    tempRange: [0.6, 1.0],
+    humidityRange: [0.0, 0.5],
     terrainParams: {
       heightOffset: 2, // 基准或略低
       heightMagnitude: 3.0, // 较大，沙丘起伏
@@ -241,8 +241,8 @@ export const BIOMES = {
     id: 'badlands',
     name: '恶地',
     // Climate parameters
-    tempRange: [0.55, 0.9], // Overlaps with Desert but distinct band
-    humidityRange: [0.0, 0.25],
+    tempRange: [0.3, 0.6],
+    humidityRange: [0.0, 0.2],
     terrainParams: {
       heightOffset: 2, // 较高
       heightMagnitude: 5,
@@ -275,7 +275,7 @@ export const BIOMES = {
     id: 'frozenOcean',
     name: '冻洋',
     // Climate parameters
-    tempRange: [0.0, 0.25], // Raise ceiling slightly
+    tempRange: [0.0, 0.3],
     humidityRange: [0.5, 1.0],
     terrainParams: {
       heightOffset: 0, // 很低，大部分在水下
