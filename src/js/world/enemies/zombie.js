@@ -1,5 +1,7 @@
 import * as THREE from 'three'
 import Experience from '../../experience.js'
+import { ZombieMovementController } from './zombie-movement-controller.js'
+import { ZombieAnimationController } from './zombie-animation.js'
 
 export const ZombieState = {
   IDLE: 'idle',
@@ -21,6 +23,9 @@ export default class Zombie {
     this.state = ZombieState.IDLE
     this.health = 20
     this.setModel()
+
+    this.movement = new ZombieMovementController(this.group)
+    this.animation = new ZombieAnimationController(this.model, this.resource.animations)
   }
 
   setModel() {
@@ -57,7 +62,14 @@ export default class Zombie {
     if (!this.player) {
       this.player = this.experience.world?.player
     }
-    // To be implemented
+    
+    if (this.player && this.player.movement) {
+        this.state = this.movement.update(this.player.movement.position, this.state)
+    }
+
+    if (this.animation) {
+        this.animation.update(this.time.delta * 0.001, this.state)
+    }
   }
 
   destroy() {
