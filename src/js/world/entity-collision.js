@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import Experience from '../../experience.js'
-import { blocks } from '../terrain/blocks-config.js'
+import Experience from '../experience.js'
+import { blocks } from './terrain/blocks-config.js'
 
 /**
  * 实体胶囊体与方块的碰撞检测/修正
