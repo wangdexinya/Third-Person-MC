@@ -17,6 +17,7 @@ import emitter from '../utils/event/event-bus.js'
 import Fireflies from './effects/fireflies.js'
 import Environment from './environment.js'
 import Player from './player/player.js'
+import Zombie from './enemies/zombie.js'
 import ChunkManager from './terrain/chunk-manager.js'
 
 /**
@@ -34,6 +35,7 @@ export default class World {
     emitter.on('core:ready', () => {
       this._initTerrain()
       this._initPlayerAndCamera()
+      this._initEnemies()
       this._initEnvironment()
       this._initBlockInteraction()
       this._initEffects()
@@ -66,6 +68,11 @@ export default class World {
     this.cameraRig = new CameraRig()
     this.cameraRig.attachPlayer(this.player)
     this.experience.camera.attachRig(this.cameraRig)
+  }
+
+  _initEnemies() {
+    this.zombie = new Zombie()
+    this.zombie.setSafeSpawn(10, 10) // Spawn at chunk 0,0 roughly
   }
 
   /** 环境（天空、光照等） */
@@ -132,6 +139,8 @@ export default class World {
       this.blockMiningController.update()
     if (this.player)
       this.player.update()
+    if (this.zombie)
+      this.zombie.update()
     if (this.environment)
       this.environment.update()
     if (this.blockRaycaster)
@@ -186,6 +195,7 @@ export default class World {
     this.environment?.destroy()
     this.cameraRig?.destroy()
     this.player?.destroy()
+    this.zombie?.destroy()
     this.chunkManager?.destroy()
 
     // Clear terrainDataManager reference
