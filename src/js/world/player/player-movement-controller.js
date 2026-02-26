@@ -293,8 +293,7 @@ export class PlayerMovementController {
    * 手动触发重生
    */
   respawn() {
-    this._updateRespawnPoint()
-    this._checkRespawn(true)
+    this._checkRespawn(true) // 强制重生
   }
 
   /**
@@ -306,7 +305,32 @@ export class PlayerMovementController {
     if (!force && this.position.y > threshold)
       return
 
-    const target = this.config.respawn?.position || { x: 10, y: 10, z: 10 }
+    // Plan B: 就近复活 - 在玩家当前的 X, Z 柱子上寻找最高方块
+    const provider = this.experience.terrainDataManager || this.terrainProvider
+
+    const targetX = Math.floor(this.position.x)
+    const targetZ = Math.floor(this.position.z)
+    let topY = null
+
+    // 尝试在当前位置寻找最高方块
+    if (provider?.getTopSolidYWorld) {
+      topY = provider.getTopSolidYWorld(targetX, targetZ)
+    }
+
+    let target
+    if (topY !== null) {
+      // 找到了最近的安全高度
+      // 顶面为方块中心 +0.5，再抬高一点防穿模 (继承原来的计算公式逻辑，可以加一点容错)
+      const surfaceY = topY + 1.5 // 假设方块高度为1，中心点为半高，这里适当抬高一点保证在顶部上方
+      target = { x: this.position.x, y: surfaceY + 0.05, z: this.position.z } // 使用玩家真实浮点xz，免除在方块边缘摔入死角
+    }
+    else {
+      // 当前柱子没有任何固体方块（例如挖了一个通向虚空的洞跳下去）
+      // 回退到全局安全的重生点 config.respawn.position
+      this._updateRespawnPoint() // 确保主重生点已初始化
+      target = this.config.respawn?.position || { x: 10, y: 10, z: 10 }
+    }
+
     this.position.set(target.x, target.y, target.z)
     this.worldVelocity.set(0, 0, 0)
     this.isGrounded = false
