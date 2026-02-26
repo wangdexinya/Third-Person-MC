@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biome Debug Map</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #0a0a0f;
+      color: #e0e0e0;
+      overflow: hidden;
+      height: 100vh;
+      display: flex;
+    }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      width: 280px;
+      min-width: 280px;
+      background: #12121a;
+      border-right: 1px solid #2a2a3a;
+      padding: 20px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      overflow-y: auto;
+    }
+
+    #sidebar h1 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 4px;
+    }
+
+    #sidebar h1 span {
+      font-size: 11px;
+      color: #888;
+      font-weight: 400;
+      display: block;
+      margin-top: 2px;
+    }
+
+    .panel-section {
+      background: #1a1a28;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .panel-section h3 {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #888;
+      margin-bottom: 10px;
+    }
+
+    .control-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 8px;
+    }
+
+    .control-row:last-child { margin-bottom: 0; }
+
+    .control-row label {
+      font-size: 13px;
+      color: #ccc;
+    }
+
+    .control-row input[type="number"] {
+      width: 80px;
+      background: #0e0e18;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #fff;
+      padding: 4px 8px;
+      font-size: 13px;
+      text-align: right;
+    }
+
+    .control-row input[type="range"] {
+      width: 120px;
+      accent-color: #6c7bff;
+    }
+
+    .control-row .value-display {
+      font-size: 12px;
+      color: #6c7bff;
+      min-width: 36px;
+      text-align: right;
+    }
+
+    /* Mode buttons */
+    .mode-group {
+      display: flex;
+      gap: 4px;
+    }
+
+    .mode-btn {
+      flex: 1;
+      padding: 6px 4px;
+      background: #0e0e18;
+      border: 1px solid #333;
+      border-radius: 4px;
+      color: #aaa;
+      font-size: 11px;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-align: center;
+    }
+
+    .mode-btn:hover { border-color: #6c7bff; color: #fff; }
+    .mode-btn.active {
+      background: #6c7bff;
+      border-color: #6c7bff;
+      color: #fff;
+    }
+
+    /* Legend */
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+      font-size: 13px;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      border: 1px solid rgba(255,255,255,0.15);
+      flex-shrink: 0;
+    }
+
+    /* ── Canvas area ── */
+    #canvas-area {
+      flex: 1;
+      position: relative;
+    }
+
+    #map-canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+    }
+
+    #map-canvas:active { cursor: grabbing; }
+
+    /* Tooltip */
+    #tooltip {
+      position: absolute;
+      pointer-events: none;
+      background: rgba(10, 10, 20, 0.92);
+      border: 1px solid #444;
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 12px;
+      line-height: 1.6;
+      color: #ddd;
+      display: none;
+      z-index: 10;
+      backdrop-filter: blur(4px);
+    }
+
+    #tooltip .tt-biome {
+      font-weight: 600;
+      font-size: 14px;
+      color: #fff;
+    }
+
+    /* Status bar */
+    #status-bar {
+      position: absolute;
+      bottom: 12px;
+      left: 12px;
+      font-size: 11px;
+      color: #666;
+      background: rgba(10, 10, 20, 0.8);
+      padding: 4px 10px;
+      border-radius: 4px;
+    }
+
+    /* Keyboard hint */
+    .hint {
+      font-size: 11px;
+      color: #555;
+      text-align: center;
+      margin-top: auto;
+      padding-top: 8px;
+    }
+
+    .hint kbd {
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 3px;
+      padding: 1px 5px;
+      font-family: monospace;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Sidebar controls -->
+  <div id="sidebar">
+    <h1>🗺️ Biome Map <span>Debug Visualization</span></h1>
+
+    <div class="panel-section">
+      <h3>Seed</h3>
+      <div class="control-row">
+        <label>World Seed</label>
+        <input type="number" id="ctrl-seed" value="12345" />
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Noise Parameters</h3>
+      <div class="control-row">
+        <label>Temp Scale</label>
+        <input type="range" id="ctrl-temp-scale" min="50" max="800" value="200" />
+        <span class="value-display" id="val-temp-scale">200</span>
+      </div>
+      <div class="control-row">
+        <label>Humidity Scale</label>
+        <input type="range" id="ctrl-humidity-scale" min="50" max="800" value="200" />
+        <span class="value-display" id="val-humidity-scale">200</span>
+      </div>
+      <div class="control-row">
+        <label>Transition</label>
+        <input type="range" id="ctrl-transition" min="0" max="50" value="15" />
+        <span class="value-display" id="val-transition">0.15</span>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Display Mode</h3>
+      <div class="mode-group">
+        <button class="mode-btn active" data-mode="biome">Biome</button>
+        <button class="mode-btn" data-mode="temperature">Temp</button>
+        <button class="mode-btn" data-mode="humidity">Humidity</button>
+      </div>
+    </div>
+
+    <div class="panel-section">
+      <h3>Legend</h3>
+      <div id="legend"></div>
+    </div>
+
+    <div class="hint">
+      <kbd>R</kbd> reset view &nbsp; <kbd>Scroll</kbd> zoom &nbsp; <kbd>Drag</kbd> pan
+    </div>
+  </div>
+
+  <!-- Canvas area -->
+  <div id="canvas-area">
+    <canvas id="map-canvas"></canvas>
+    <div id="tooltip"></div>
+    <div id="status-bar"></div>
+  </div>
+
+  <script type="module" src="/src/debug/biome-map.js"></script>
+</body>
+</html>

@@ -15,6 +15,14 @@ export default {
     host: HOST,
     port: PORT,
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: path.resolve(__dirname, 'index.html'),
+        biomeDebug: path.resolve(__dirname, 'biome-debug.html'),
+      },
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),
