@@ -14,6 +14,7 @@ import BlockRaycaster from '../interaction/block-raycaster.js'
 import BlockSelectionHelper from '../interaction/block-selection-helper.js'
 import ItemPickupAnimator from '../interaction/item-pickup-animator.js'
 import emitter from '../utils/event/event-bus.js'
+import Fireflies from './effects/fireflies.js'
 import Environment from './environment.js'
 import Player from './player/player.js'
 import ChunkManager from './terrain/chunk-manager.js'
@@ -92,10 +93,11 @@ export default class World {
     })
   }
 
-  /** 视觉效果：破碎粒子、拾取动画 */
+  /** 视觉效果：破碎粒子、拾取动画、萤火虫 */
   _initEffects() {
     this.blockBreakParticles = new BlockBreakParticles()
     this.itemPickupAnimator = new ItemPickupAnimator()
+    this.fireflies = new Fireflies()
   }
 
   /** 设置变更监听（视距等） */
@@ -138,6 +140,8 @@ export default class World {
       this.blockSelectionHelper.update()
     if (this.blockBreakParticles)
       this.blockBreakParticles.update()
+    if (this.fireflies)
+      this.fireflies.update()
   }
 
   /**
@@ -175,6 +179,7 @@ export default class World {
     this.blockInteractionManager?.destroy()
     this.blockMiningController?.destroy()
     this.blockBreakParticles?.destroy()
+    this.fireflies?.destroy()
     this.itemPickupAnimator?.destroy()
     this.blockSelectionHelper?.dispose()
     this.blockRaycaster?.destroy()
