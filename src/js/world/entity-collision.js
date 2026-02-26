@@ -3,12 +3,12 @@ import Experience from '../../experience.js'
 import { blocks } from '../terrain/blocks-config.js'
 
 /**
- * 玩家胶囊体与方块的碰撞检测/修正
+ * 实体胶囊体与方块的碰撞检测/修正
  * - broadPhase: 根据胶囊包围盒筛出潜在方块
  * - narrowPhase: 逐块计算最近点并检测是否与胶囊相交
  * - resolveCollisions: 按重叠深度由小到大修正位置与速度
  */
-export default class PlayerCollisionSystem {
+export default class EntityCollisionSystem {
   constructor() {
     this.experience = new Experience()
     this.scene = this.experience.scene

@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { MOVEMENT_CONSTANTS, MOVEMENT_DIRECTION_WEIGHTS } from '../../config/player-config.js'
 import Experience from '../../experience.js'
 import { LocomotionProfiles } from './animation-config.js'
-import PlayerCollisionSystem from './player-collision.js'
+import EntityCollisionSystem from '../entity-collision.js'
 
 /**
  * 玩家移动控制器
@@ -26,7 +26,7 @@ export class PlayerMovementController {
       halfHeight: 0.55, // cylinder 半高
       offset: new THREE.Vector3(0, 0.85, 0), // 胶囊中心相对脚底位置
     }
-    this.collision = new PlayerCollisionSystem()
+    this.collision = new EntityCollisionSystem()
     // 无限地形查询入口：ChunkManager（World 中会挂到 experience.terrainDataManager）
     this.terrainProvider = this.experience.terrainDataManager
     this._hasInitializedRespawn = false
