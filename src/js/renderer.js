@@ -5,6 +5,10 @@ import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { ShaderPass } from 'three/examples/jsm/postprocessing/ShaderPass.js'
 import { UnrealBloomPass } from 'three/examples/jsm/postprocessing/UnrealBloomPass.js'
 
+// 凝视恐惧 Shader
+import gazeFragmentShader from '../shaders/gaze/fragment.glsl'
+import gazeVertexShader from '../shaders/gaze/vertex.glsl'
+
 // 速度线 Shader
 import speedLinesFragmentShader from '../shaders/speedlines/fragment.glsl'
 import speedLinesVertexShader from '../shaders/speedlines/vertex.glsl'
@@ -45,6 +49,11 @@ export default class Renderer {
         maxRadius: 1.3, // 三角形起始半径
         randomness: 0.5, // 随机性强度
         opacity: 0.0, // 当前透明度（由 Player 控制）
+      },
+      // 凝视恐惧参数
+      gaze: {
+        enabled: true, // 是否启用凝视恐惧效果
+        intensity: 0.0, // 凝视强度 (0-1)
       },
     }
 
@@ -106,6 +115,17 @@ export default class Renderer {
         }
       }
     })
+
+    emitter.on('settings:postprocess-changed', ({ gaze }) => {
+      if (gaze) {
+        this.postProcessConfig.gaze.enabled = gaze.enabled
+        // Note: gazePass.enabled is controlled in the update loop for performance
+        if (gaze.intensity !== undefined) {
+          this.postProcessConfig.gaze.intensity = gaze.intensity
+          this.gazePass.uniforms.uIntensity.value = gaze.intensity
+        }
+      }
+    })
   }
 
   setInstance() {
@@ -126,7 +146,7 @@ export default class Renderer {
 
   /**
    * 设置后期处理管线
-   * 渲染顺序: RenderPass -> UnrealBloomPass -> SpeedLinePass -> OutputPass
+   * 渲染顺序: RenderPass -> UnrealBloomPass -> SpeedLinePass -> GazePass -> OutputPass
    */
   setPostProcess() {
     // 创建 EffectComposer
@@ -171,7 +191,20 @@ export default class Renderer {
     this.speedLinePass.enabled = this.postProcessConfig.speedLines.enabled
     this.composer.addPass(this.speedLinePass)
 
-    // 4. OutputPass - 色调映射与色彩空间转换（确保最终输出正确）
+    // 4. GazePass - 被追逐时的凝视恐惧效果
+    this.gazePass = new ShaderPass({
+      uniforms: {
+        tDiffuse: { value: null },
+        uTime: { value: 0 },
+        uIntensity: { value: this.postProcessConfig.gaze.intensity },
+      },
+      vertexShader: gazeVertexShader,
+      fragmentShader: gazeFragmentShader,
+    })
+    this.gazePass.enabled = this.postProcessConfig.gaze.enabled
+    this.composer.addPass(this.gazePass)
+
+    // 5. OutputPass - 色调映射与色彩空间转换（确保最终输出正确）
     this.outputPass = new OutputPass()
     this.composer.addPass(this.outputPass)
   }
@@ -311,6 +344,28 @@ export default class Renderer {
       readonly: true,
     })
 
+    // ===== 凝视恐惧控制 =====
+    const gazeFolder = postProcessFolder.addFolder({
+      title: 'Gaze 凝视恐惧',
+      expanded: true,
+    })
+
+    gazeFolder.addBinding(this.postProcessConfig.gaze, 'enabled', {
+      label: '启用',
+    }).on('change', (ev) => {
+      this.postProcessConfig.gaze.enabled = ev.value
+      // Note: gazePass.enabled is controlled in the update loop for performance
+    })
+
+    gazeFolder.addBinding(this.postProcessConfig.gaze, 'intensity', {
+      label: '强度',
+      min: 0,
+      max: 1,
+      step: 0.01,
+    }).on('change', (ev) => {
+      this.gazePass.uniforms.uIntensity.value = ev.value
+    })
+
     // ===== 阴影质量控制 =====
     const shadowFolder = this.debug.ui.addFolder({
       title: 'Shadow Quality 阴影质量',
@@ -361,6 +416,10 @@ export default class Renderer {
     // 更新速度线时间 uniform
     this.speedLinePass.uniforms.uTime.value
       = this.experience.time.elapsed * 0.001
+
+    // 更新凝视恐惧时间 uniform，并在强度极低时禁用以节省性能
+    this.gazePass.uniforms.uTime.value = this.experience.time.elapsed * 0.001
+    this.gazePass.enabled = this.postProcessConfig.gaze.enabled && this.gazePass.uniforms.uIntensity.value > 0.005
 
     // 使用 EffectComposer 渲染（包含所有后期处理）
     this.composer.render()
@@ -442,6 +501,8 @@ export default class Renderer {
       this.bloomPass.dispose?.()
     if (this.speedLinePass)
       this.speedLinePass.dispose?.()
+    if (this.gazePass)
+      this.gazePass.dispose?.()
     if (this.outputPass)
       this.outputPass.dispose?.()
 
