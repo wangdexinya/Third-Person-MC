@@ -96,15 +96,24 @@ export default class CameraRig {
 
   // #region
   _setupEventListeners() {
+    emitter.on('input:telescope', (isActive) => {
+      this.isTelescopeActive = isActive
+    })
+
     emitter.on('input:mouse_move', ({ movementY }) => {
       const config = this.config.follow.mouseTargetY
       if (!config.enabled) {
         return
       }
 
+      // 望远镜模式下的鼠标灵敏度缩放
+      const sensitivityMultiplier = (this.isTelescopeActive && this.config.trackingShot.telescope?.enabled)
+        ? this.config.trackingShot.telescope.sensitivityMultiplier
+        : 1.0
+
       // 目标阻尼模型：直接调整目标值
       const sign = config.invertY ? -1 : 1
-      this.mouseYOffsetTarget += movementY * config.sensitivity * sign
+      this.mouseYOffsetTarget += movementY * config.sensitivity * sensitivityMultiplier * sign
 
       // 限制目标值范围
       this.mouseYOffsetTarget = THREE.MathUtils.clamp(
@@ -348,18 +357,22 @@ export default class CameraRig {
    * 使用帧率无关阻尼
    */
   _updateDynamicFov(speed, dt) {
-    if (!this.config.trackingShot.fov.enabled) {
-      return
+    let targetFov = this.config.trackingShot.fov.baseFov
+    let dampingLambda = 6 // 默认动态 FOV 的阻尼系数
+
+    // 优先处理望远镜 FOV
+    if (this.isTelescopeActive && this.config.trackingShot.telescope.enabled) {
+      targetFov = this.config.trackingShot.telescope.fov
+      dampingLambda = this.config.trackingShot.telescope.smoothSpeed
+    } else if (this.config.trackingShot.fov.enabled) {
+      // 动态 FOV（跑动时扩大视野）
+      const { baseFov, maxFov, speedThreshold } = this.config.trackingShot.fov
+      const speedRatio = Math.min(speed / speedThreshold, 1.0)
+      targetFov = baseFov + (maxFov - baseFov) * speedRatio
     }
 
-    const { baseFov, maxFov, speedThreshold } = this.config.trackingShot.fov
-
-    // 根据速度计算目标 FOV
-    const speedRatio = Math.min(speed / speedThreshold, 1.0)
-    const targetFov = baseFov + (maxFov - baseFov) * speedRatio
-
-    // 帧率无关阻尼平滑 (lambda = 6 对应约 200ms 响应)
-    this._currentFov = damp(this._currentFov, targetFov, 6, dt)
+    // 帧率无关阻尼平滑
+    this._currentFov = damp(this._currentFov, targetFov, dampingLambda, dt)
   }
 
   _updateBobbing(speed, isMoving) {
@@ -547,6 +560,37 @@ export default class CameraRig {
 
     mouseTargetFolder.addBinding(this.config.follow.mouseTargetY, 'unlockReset', {
       label: '解锁重置',
+    })
+
+    // ===== 望远镜 =====
+    const telescopeFolder = debugFolder.addFolder({
+      title: '望远镜 (Caps Lock)',
+      expanded: false,
+    })
+
+    telescopeFolder.addBinding(this.config.trackingShot.telescope, 'enabled', {
+      label: '启用',
+    })
+
+    telescopeFolder.addBinding(this.config.trackingShot.telescope, 'fov', {
+      label: '放大 FOV',
+      min: 5,
+      max: 60,
+      step: 1,
+    })
+
+    telescopeFolder.addBinding(this.config.trackingShot.telescope, 'smoothSpeed', {
+      label: '缩放平滑',
+      min: 1,
+      max: 20,
+      step: 0.5,
+    })
+
+    telescopeFolder.addBinding(this.config.trackingShot.telescope, 'sensitivityMultiplier', {
+      label: '鼠标灵敏倍率',
+      min: 0.05,
+      max: 1.0,
+      step: 0.05,
     })
 
     // ===== 动态 FOV =====

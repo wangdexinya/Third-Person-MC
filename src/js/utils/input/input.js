@@ -19,6 +19,7 @@ export default class InputManager {
       x: false,
       c: false,
       q: false,
+      capslock: false,
     }
 
     // 鼠标按键状态
@@ -152,6 +153,12 @@ export default class InputManager {
           emitter.emit('input:respawn')
         }
         this.keys.r = isPressed
+        break
+      case 'capslock':
+        if (this.keys.capslock !== isPressed) {
+          this.keys.capslock = isPressed
+          emitter.emit('input:telescope', isPressed)
+        }
         break
     }
 

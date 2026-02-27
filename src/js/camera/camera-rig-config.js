@@ -25,6 +25,13 @@ export const CAMERA_RIG_CONFIG = {
 
   // ===== Tracking Shot 配置 =====
   trackingShot: {
+    // 望远镜配置
+    telescope: {
+      enabled: true,
+      fov: 20, // 放大时的目标 FOV
+      smoothSpeed: 8, // 放大/缩小平滑阻尼 (与动态 FOV 独立)
+      sensitivityMultiplier: 0.3, // 放大时鼠标灵敏度倍率
+    },
     // 动态 FOV 配置
     fov: {
       enabled: true,

@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import { useSkinStore } from '../../../pinia/skinStore.js'
+import { CAMERA_RIG_CONFIG } from '../../camera/camera-rig-config.js'
 import { PLAYER_CONFIG } from '../../config/player-config.js'
 import { SHADOW_QUALITY } from '../../config/shadow-config.js'
 import { SKIN_LIST } from '../../config/skin-config.js'
@@ -59,6 +60,8 @@ export default class Player {
     this._useLeftHook = true // 勾拳：true=左手, false=右手
     // 挖掘状态
     this.isMining = false
+    // 望远镜状态
+    this.isTelescopeActive = false
 
     // Resource - 使用当前选中的皮肤
     const skinStore = useSkinStore()
@@ -278,10 +281,20 @@ export default class Player {
       this.animation.stateMachine.setState(AnimationStates.LOCOMOTION)
     })
 
+    // ==================== 望远镜事件 ====================
+    emitter.on('input:telescope', (isActive) => {
+      this.isTelescopeActive = isActive
+    })
+
     // ==================== 鼠标旋转（Pointer Lock 模式） ====================
     emitter.on('input:mouse_move', ({ movementX }) => {
+      // 望远镜模式下的鼠标灵敏度缩放
+      const sensitivityMultiplier = (this.isTelescopeActive && CAMERA_RIG_CONFIG.trackingShot.telescope?.enabled)
+        ? CAMERA_RIG_CONFIG.trackingShot.telescope.sensitivityMultiplier
+        : 1.0
+
       // 更新目标朝向，而非直接设置
-      this.targetFacingAngle -= movementX * this.config.mouseSensitivity
+      this.targetFacingAngle -= movementX * this.config.mouseSensitivity * sensitivityMultiplier
     })
 
     // ==================== 重生 ====================

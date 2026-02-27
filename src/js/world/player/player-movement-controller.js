@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import { MOVEMENT_CONSTANTS, MOVEMENT_DIRECTION_WEIGHTS } from '../../config/player-config.js'
 import Experience from '../../experience.js'
-import { LocomotionProfiles } from './animation-config.js'
 import EntityCollisionSystem from '../entity-collision.js'
+import { LocomotionProfiles } from './animation-config.js'
 
 /**
  * 玩家移动控制器
