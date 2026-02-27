@@ -15,9 +15,9 @@ import BlockSelectionHelper from '../interaction/block-selection-helper.js'
 import ItemPickupAnimator from '../interaction/item-pickup-animator.js'
 import emitter from '../utils/event/event-bus.js'
 import Fireflies from './effects/fireflies.js'
+import EnemyManager from './enemies/enemy-manager.js'
 import Environment from './environment.js'
 import Player from './player/player.js'
-import Zombie from './enemies/zombie.js'
 import ChunkManager from './terrain/chunk-manager.js'
 
 /**
@@ -35,11 +35,12 @@ export default class World {
     emitter.on('core:ready', () => {
       this._initTerrain()
       this._initPlayerAndCamera()
-      this._initEnemies()
+
       this._initEnvironment()
       this._initBlockInteraction()
       this._initEffects()
       this._setupSettingsListeners()
+      this._initEnemies()
     })
   }
 
@@ -71,8 +72,7 @@ export default class World {
   }
 
   _initEnemies() {
-    this.zombie = new Zombie()
-    this.zombie.setSafeSpawn(10, 10) // Spawn at chunk 0,0 roughly
+    this.enemyManager = new EnemyManager()
   }
 
   /** 环境（天空、光照等） */
@@ -139,8 +139,8 @@ export default class World {
       this.blockMiningController.update()
     if (this.player)
       this.player.update()
-    if (this.zombie)
-      this.zombie.update()
+    if (this.enemyManager)
+      this.enemyManager.update()
     if (this.environment)
       this.environment.update()
     if (this.blockRaycaster)
@@ -195,7 +195,7 @@ export default class World {
     this.environment?.destroy()
     this.cameraRig?.destroy()
     this.player?.destroy()
-    this.zombie?.destroy()
+    this.enemyManager?.destroy()
     this.chunkManager?.destroy()
 
     // Clear terrainDataManager reference
