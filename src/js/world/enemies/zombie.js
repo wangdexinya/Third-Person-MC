@@ -1,12 +1,14 @@
 import * as THREE from 'three'
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import Experience from '../../experience.js'
-import { ZombieMovementController } from './zombie-movement-controller.js'
 import { ZombieAnimationController } from './zombie-animation.js'
+import { ZombieMovementController } from './zombie-movement-controller.js'
 
 export const ZombieState = {
   IDLE: 'idle',
+  WANDER: 'wander',
   CHASE: 'chase',
-  ATTACK: 'attack'
+  ATTACK: 'attack',
 }
 
 export default class Zombie {
@@ -29,31 +31,40 @@ export default class Zombie {
   }
 
   setModel() {
-    // Clone the scene to allow multiple zombies
-    this.model = this.resource.scene.clone()
-    this.model.traverse((child) => {
-      if (child instanceof THREE.Mesh) {
-        child.castShadow = true
-        child.material = child.material.clone() // Clone materials to prevent shared color bugs later
-      }
-    })
-    
+    // Clone the scene to allow multiple zombies (SkeletonUtils preserves skeleton bindings)
+    this.model = SkeletonUtils.clone(this.resource.scene)
+
     // Create a group to handle positioning
     this.group = new THREE.Group()
     this.group.add(this.model)
     this.scene.add(this.group)
   }
-  
+
   setSafeSpawn(x, z) {
     const provider = this.experience.terrainDataManager
-    const groundY = provider?.getTopSolidYWorld?.(Math.floor(x), Math.floor(z))
-    this.group.position.set(x, (groundY ?? 80) + 1, z)
+    let targetX = Math.floor(x)
+    let targetZ = Math.floor(z)
+    let groundY = provider?.getTopSolidYWorld?.(targetX, targetZ)
+
+    if (groundY === null || groundY === undefined) {
+      if (this.player && this.player.movement) {
+        targetX = Math.floor(this.player.movement.position.x)
+        targetZ = Math.floor(this.player.movement.position.z)
+        groundY = provider?.getTopSolidYWorld?.(targetX, targetZ)
+      }
+    }
+
+    this.group.position.set(targetX, (groundY ?? 80) + 1.5, targetZ)
+    if (this.movement) {
+      this.movement.position.copy(this.group.position)
+      this.movement.worldVelocity.set(0, 0, 0)
+    }
   }
 
   takeDamage(amount) {
     this.health -= amount
     if (this.health <= 0) {
-        this.destroy()
+      this.destroy()
     }
   }
 
@@ -62,13 +73,17 @@ export default class Zombie {
     if (!this.player) {
       this.player = this.experience.world?.player
     }
-    
+
     if (this.player && this.player.movement) {
-        this.state = this.movement.update(this.player.movement.position, this.state)
+      this.state = this.movement.update(this.player.movement.position, this.state)
+      if (this.movement.needsRespawn) {
+        this.setSafeSpawn(this.movement.position.x, this.movement.position.z)
+        this.movement.needsRespawn = false
+      }
     }
 
     if (this.animation) {
-        this.animation.update(this.time.delta * 0.001, this.state)
+      this.animation.update(this.time.delta * 0.001, this.state)
     }
   }
 
@@ -81,7 +96,7 @@ export default class Zombie {
       }
     })
     if (this.animation && this.animation.mixer) {
-        this.animation.mixer.stopAllAction()
+      this.animation.mixer.stopAllAction()
     }
     // Also remove from world updates if managed in an array later
   }

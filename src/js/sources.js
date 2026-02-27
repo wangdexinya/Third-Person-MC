@@ -36,7 +36,7 @@ export default [
   {
     name: 'zombieModel',
     type: 'gltfModel',
-    path: 'models/character/steve.glb',
+    path: 'models/character/zombie.glb',
   },
   {
     name: 'alexModel',
