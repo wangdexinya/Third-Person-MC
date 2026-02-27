@@ -156,10 +156,13 @@ export default class Renderer {
     this.renderPass = new RenderPass(this.scene, this.camera.instance)
     this.composer.addPass(this.renderPass)
 
-    // 2. UnrealBloomPass - 辉光效果，增加画面氛围感
-    const resolution = new THREE.Vector2(this.sizes.width, this.sizes.height)
+    // 2. UnrealBloomPass - half-resolution to save ~75% GPU memory
+    const bloomResolution = new THREE.Vector2(
+      Math.floor(this.sizes.width / 2),
+      Math.floor(this.sizes.height / 2),
+    )
     this.bloomPass = new UnrealBloomPass(
-      resolution,
+      bloomResolution,
       this.postProcessConfig.bloom.strength,
       this.postProcessConfig.bloom.radius,
       this.postProcessConfig.bloom.threshold,
@@ -393,9 +396,10 @@ export default class Renderer {
     this.instance.setSize(this.sizes.width, this.sizes.height)
     this.instance.setPixelRatio(this.sizes.pixelRatio)
 
-    // 同步更新 Composer 尺寸
+    // Cap composer pixelRatio to 1 to avoid excessive RT memory on hi-DPI displays
+    const composerPixelRatio = Math.min(this.sizes.pixelRatio, 1)
     this.composer.setSize(this.sizes.width, this.sizes.height)
-    this.composer.setPixelRatio(this.sizes.pixelRatio)
+    this.composer.setPixelRatio(composerPixelRatio)
 
     // 通知玩家预览相机更新尺寸
     if (this.playerPreview) {
