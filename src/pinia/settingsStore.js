@@ -98,15 +98,18 @@ export const useSettingsStore = defineStore('settings', () => {
       const saved = localStorage.getItem(STORAGE_KEY)
       if (saved) {
         const parsed = JSON.parse(saved)
-        if (parsed.language) language.value = parsed.language
-        if (parsed.shadowQuality) shadowQuality.value = parsed.shadowQuality
+        if (parsed.language)
+          language.value = parsed.language
+        if (parsed.shadowQuality)
+          shadowQuality.value = parsed.shadowQuality
         if (parsed.mouseSensitivity)
           mouseSensitivity.value = parsed.mouseSensitivity
         if (parsed.masterVolume !== undefined)
           masterVolume.value = parsed.masterVolume
         if (parsed.musicVolume !== undefined)
           musicVolume.value = parsed.musicVolume
-        if (parsed.sfxVolume !== undefined) sfxVolume.value = parsed.sfxVolume
+        if (parsed.sfxVolume !== undefined)
+          sfxVolume.value = parsed.sfxVolume
 
         // Camera preset
         if (parsed.cameraPreset) {
@@ -121,7 +124,8 @@ export const useSettingsStore = defineStore('settings', () => {
         }
 
         // Environment
-        if (parsed.envSkyMode) envSkyMode.value = parsed.envSkyMode
+        if (parsed.envSkyMode)
+          envSkyMode.value = parsed.envSkyMode
         if (parsed.envSunIntensity !== undefined)
           envSunIntensity.value = parsed.envSunIntensity
         if (parsed.envAmbientIntensity !== undefined)
@@ -135,7 +139,8 @@ export const useSettingsStore = defineStore('settings', () => {
         if (parsed.frontViewEnabled !== undefined)
           frontViewEnabled.value = parsed.frontViewEnabled
       }
-    } catch {
+    }
+    catch {
       console.warn('[Settings] Failed to load settings from localStorage')
     }
   }
@@ -163,7 +168,8 @@ export const useSettingsStore = defineStore('settings', () => {
         frontViewEnabled: frontViewEnabled.value,
       }
       localStorage.setItem(STORAGE_KEY, JSON.stringify(settings))
-    } catch {
+    }
+    catch {
       console.warn('[Settings] Failed to save settings to localStorage')
     }
   }

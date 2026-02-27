@@ -20,7 +20,8 @@ const inputValue = ref('')
 // Check if message should be fading
 function isMessageFading(msg) {
   // If chat is OPEN, show all messages fully opaque
-  if (hud.isChatOpen) return false
+  if (hud.isChatOpen)
+    return false
   return Date.now() - msg.timestamp > FADE_TIMEOUT
 }
 
@@ -88,8 +89,7 @@ onUnmounted(() => {
         class="chat-message mc-text"
         :class="[msg.type, { fading: fadingMessages.has(msg.id) }]"
       >
-        <span v-if="msg.type === 'chat'" class="chat-prefix mc-text"
-          >&lt;Player&gt;
+        <span v-if="msg.type === 'chat'" class="chat-prefix mc-text">&lt;Player&gt;
         </span>
         {{ msg.text }}
       </div>
@@ -106,7 +106,7 @@ onUnmounted(() => {
         @keydown.enter="handleSend"
         @keydown.esc="handleClose"
         @blur="handleClose"
-      />
+      >
     </div>
   </div>
 </template>

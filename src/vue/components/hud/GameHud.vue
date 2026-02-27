@@ -22,7 +22,8 @@ const hud = useHudStore()
 
 function handleKeyDown(e) {
   // If user is typing in an input, ignore logic
-  if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return
+  if (['INPUT', 'TEXTAREA'].includes(e.target.tagName))
+    return
 
   if (e.code === 'KeyT') {
     e.preventDefault()

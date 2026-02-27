@@ -130,4 +130,3 @@ export default class BlockInteractionManager {
     emitter.off('hud:selected-block-update', this._onHotbarUpdate)
   }
 }
-
