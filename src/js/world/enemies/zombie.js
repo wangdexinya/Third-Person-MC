@@ -12,13 +12,11 @@ export const ZombieState = {
 }
 
 export default class Zombie {
-  constructor() {
+  constructor({ collision } = {}) {
     this.experience = new Experience()
     this.scene = this.experience.scene
     this.time = this.experience.time
     this.resources = this.experience.resources
-    // world depends on initialization order, but experience.world might be accessed here
-    // It's better to fetch player lazily in update if world isn't fully built yet
     this.player = this.experience.world?.player
 
     this.resource = this.resources.items.zombieModel
@@ -26,7 +24,7 @@ export default class Zombie {
     this.health = 20
     this.setModel()
 
-    this.movement = new ZombieMovementController(this.group)
+    this.movement = new ZombieMovementController(this.group, { collision })
     this.animation = new ZombieAnimationController(this.model, this.resource.animations)
   }
 
@@ -92,12 +90,24 @@ export default class Zombie {
     this.model.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.geometry?.dispose()
-        child.material?.dispose()
+        // Dispose cloned materials but NOT textures (shared with original resource)
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach(m => m.dispose())
+          }
+          else {
+            child.material.dispose()
+          }
+        }
       }
     })
-    if (this.animation && this.animation.mixer) {
+    if (this.animation?.mixer) {
       this.animation.mixer.stopAllAction()
+      this.animation.mixer.uncacheRoot(this.model)
     }
-    // Also remove from world updates if managed in an array later
+    this.group = null
+    this.model = null
+    this.movement = null
+    this.animation = null
   }
 }

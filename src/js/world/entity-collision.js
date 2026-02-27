@@ -38,6 +38,12 @@ export default class EntityCollisionSystem {
       wireframe: true,
     })
     this._contactGeometry = new THREE.SphereGeometry(0.05, 8, 8)
+
+    // Pre-allocated temp vectors for narrow phase / capsule check
+    this._tempClosest = new THREE.Vector3()
+    this._tempLocal = new THREE.Vector3()
+    this._tempNormal = new THREE.Vector3()
+    this._tempDelta = new THREE.Vector3()
   }
 
   /**
@@ -106,7 +112,7 @@ export default class EntityCollisionSystem {
 
     for (const block of candidates) {
       // 方块中心在整数坐标，边长 1，对应 [-0.5,0.5]
-      const closestPoint = new THREE.Vector3(
+      const closestPoint = this._tempClosest.set(
         this._clamp(center.x, block.x - 0.5, block.x + 0.5),
         this._clamp(center.y, block.y - 0.5, block.y + 0.5),
         this._clamp(center.z, block.z - 0.5, block.z + 0.5),
@@ -118,7 +124,7 @@ export default class EntityCollisionSystem {
       }
       collisions.push({
         block,
-        contactPoint: closestPoint,
+        contactPoint: closestPoint.clone(),  // Must clone since _tempClosest is reused
         normal: collision.normal,
         overlap: collision.overlap,
         ground: collision.ground,
@@ -207,7 +213,7 @@ export default class EntityCollisionSystem {
   _capsuleContainsPoint(point, capsule) {
     const { center, halfHeight, radius } = capsule
     // 将点转换到胶囊本地空间（轴向 y）
-    const local = new THREE.Vector3().subVectors(point, center)
+    const local = this._tempLocal.subVectors(point, center)
 
     // 投影到轴线 [-halfHeight, halfHeight]
     const clampedY = this._clamp(local.y, -halfHeight, halfHeight)
@@ -225,7 +231,7 @@ export default class EntityCollisionSystem {
     // 法线指向“远离方块”方向：从方块指向胶囊中心
     let normal
     if (dist > 1e-6) {
-      normal = new THREE.Vector3(-deltaX / dist, -deltaY / dist, -deltaZ / dist)
+      normal = this._tempNormal.set(-deltaX / dist, -deltaY / dist, -deltaZ / dist).clone()
     }
     else {
       // 退化情况：点在轴线上，使用 y 方向区分上下

@@ -1,10 +1,9 @@
 import * as THREE from 'three'
 import Experience from '../../experience.js'
-import EntityCollisionSystem from '../entity-collision.js'
 import { ZombieState } from './zombie.js'
 
 export class ZombieMovementController {
-  constructor(zombieGroup) {
+  constructor(zombieGroup, { collision } = {}) {
     this.experience = new Experience()
     this.group = zombieGroup
 
@@ -21,8 +20,9 @@ export class ZombieMovementController {
       offset: new THREE.Vector3(0, 0.85, 0),
     }
 
-    this.collision = new EntityCollisionSystem()
-    this.terrainProvider = this.experience.terrainDataManager // May be undefined initially
+    // Use shared collision system (injected from EnemyManager)
+    this.collision = collision
+    this.terrainProvider = this.experience.terrainDataManager
 
     // Distances
     this.AGGRO_RANGE = 20.0
@@ -32,18 +32,36 @@ export class ZombieMovementController {
     this.attackCooldown = 0
     this.wanderTimer = 0
     this.wanderDirection = new THREE.Vector3()
+
+    // Pre-allocated temp vectors to avoid per-frame GC pressure
+    this._tempDir = new THREE.Vector3()
+    this._tempNextPos = new THREE.Vector3()
+    this._tempCenter = new THREE.Vector3()
+    this._tempObstacleDir = new THREE.Vector3()
+
+    // Pre-allocated player state object (reused every frame)
+    this._playerState = {
+      basePosition: new THREE.Vector3(),
+      center: new THREE.Vector3(),
+      halfHeight: this.capsule.halfHeight,
+      radius: this.capsule.radius,
+      worldVelocity: this.worldVelocity,
+      isGrounded: false,
+    }
   }
 
   update(playerPos, currentState) {
     const dt = this.experience.time.delta * 0.001
+    if (!this.collision) return currentState
+
     this.collision.prepareFrame()
 
     this.attackCooldown -= dt
     this.wanderTimer -= dt
 
-    // 1. Calculate direction and distance to player
-    const directionToPlayer = new THREE.Vector3().subVectors(playerPos, this.position)
-    directionToPlayer.y = 0 // Ignore height for horizontal movement
+    // 1. Calculate direction and distance to player (reuse temp vector)
+    const directionToPlayer = this._tempDir.subVectors(playerPos, this.position)
+    directionToPlayer.y = 0
     const distanceToPlayer = directionToPlayer.length()
 
     let newState = currentState
@@ -58,15 +76,14 @@ export class ZombieMovementController {
         newState = ZombieState.CHASE
       }
       else {
-        // Wander logic: switch between IDLE and WANDER randomly
         if (this.wanderTimer <= 0) {
           if (Math.random() < 0.5) {
             newState = ZombieState.IDLE
-            this.wanderTimer = 2.0 + Math.random() * 3.0 // Idle for 2-5s
+            this.wanderTimer = 2.0 + Math.random() * 3.0
           }
           else {
             newState = ZombieState.WANDER
-            this.wanderTimer = 2.0 + Math.random() * 3.0 // Walk for 2-5s
+            this.wanderTimer = 2.0 + Math.random() * 3.0
             const angle = Math.random() * Math.PI * 2
             this.wanderDirection.set(Math.sin(angle), 0, Math.cos(angle))
           }
@@ -97,7 +114,6 @@ export class ZombieMovementController {
       this.worldVelocity.x = directionToPlayer.x * this.runSpeed
       this.worldVelocity.z = directionToPlayer.z * this.runSpeed
 
-      // Rotate model to face player
       const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
       this.group.rotation.y = angle
     }
@@ -105,16 +121,13 @@ export class ZombieMovementController {
       this.worldVelocity.x = this.wanderDirection.x * this.walkSpeed
       this.worldVelocity.z = this.wanderDirection.z * this.walkSpeed
 
-      // Rotate model to walk direction
       const angle = Math.atan2(this.wanderDirection.x, this.wanderDirection.z)
       this.group.rotation.y = angle
     }
     else {
-      // IDLE or ATTACK -> Stop moving
       this.worldVelocity.x = 0
       this.worldVelocity.z = 0
 
-      // Still face the player if attacking or idle in range
       if ((newState === ZombieState.ATTACK || (newState === ZombieState.IDLE && distanceToPlayer <= this.ATTACK_RANGE)) && distanceToPlayer > 0) {
         const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
         this.group.rotation.y = angle
@@ -124,52 +137,47 @@ export class ZombieMovementController {
     // 4. Gravity
     this.worldVelocity.y += this.gravity * dt
 
-    // 5. Collision Resolution & Obstacle Jumping
-    const nextPosition = new THREE.Vector3().copy(this.position).addScaledVector(this.worldVelocity, dt)
-    const playerState = {
-      basePosition: nextPosition,
-      center: nextPosition.clone().add(this.capsule.offset),
-      halfHeight: this.capsule.halfHeight,
-      radius: this.capsule.radius,
-      worldVelocity: this.worldVelocity,
-      isGrounded: this.isGrounded,
-    }
+    // 5. Collision Resolution & Obstacle Jumping (reuse pre-allocated objects)
+    const nextPosition = this._tempNextPos.copy(this.position).addScaledVector(this.worldVelocity, dt)
+    const ps = this._playerState
+    ps.basePosition.copy(nextPosition)
+    ps.center.copy(nextPosition).add(this.capsule.offset)
+    ps.worldVelocity = this.worldVelocity
+    ps.isGrounded = this.isGrounded
 
     const provider = this.experience.terrainDataManager || this.terrainProvider
     if (provider) {
-      const candidates = this.collision.broadPhase(playerState, provider)
+      const candidates = this.collision.broadPhase(ps, provider)
 
-      // Obstacle Jumping: 借助 collision 的粗判断，如果前方有障碍（超过10个方块候选）则跳跃
+      // Obstacle Jumping
       if (this.isGrounded && (newState === ZombieState.CHASE || newState === ZombieState.WANDER)) {
-        const dir = new THREE.Vector3(this.worldVelocity.x, 0, this.worldVelocity.z)
+        const dir = this._tempObstacleDir.set(this.worldVelocity.x, 0, this.worldVelocity.z)
 
         if (dir.lengthSq() > 0.01 && candidates.length > 10) {
-          // console.log(true)
-
-          this.worldVelocity.y = 3.5// Jump velocity
-          playerState.worldVelocity.y = 3.5
+          this.worldVelocity.y = 3.5
+          ps.worldVelocity.y = 3.5
           this.isGrounded = false
-          playerState.isGrounded = false
+          ps.isGrounded = false
 
-          // 根据新的跳跃速度重新计算下一帧位置
           nextPosition.copy(this.position).addScaledVector(this.worldVelocity, dt)
-          playerState.basePosition.copy(nextPosition)
-          playerState.center.copy(nextPosition).add(this.capsule.offset)
+          ps.basePosition.copy(nextPosition)
+          ps.center.copy(nextPosition).add(this.capsule.offset)
         }
       }
 
-      const collisions = this.collision.narrowPhase(candidates, playerState)
-      this.collision.resolveCollisions(collisions, playerState)
+      const collisions = this.collision.narrowPhase(candidates, ps)
+      this.collision.resolveCollisions(collisions, ps)
 
-      if (collisions.length >= 13 || playerState.basePosition.y < -10) {
+      if (collisions.length >= 13 || ps.basePosition.y < -10) {
         this.needsRespawn = true
       }
     }
 
-    this.isGrounded = playerState.isGrounded
-    this.position.copy(playerState.basePosition)
-    this.worldVelocity.copy(playerState.worldVelocity)
+    this.isGrounded = ps.isGrounded
+    this.position.copy(ps.basePosition)
+    this.worldVelocity.copy(ps.worldVelocity)
 
-    return newState // Return updated state to Zombie class
+    return newState
   }
 }
+

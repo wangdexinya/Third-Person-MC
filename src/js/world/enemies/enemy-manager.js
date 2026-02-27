@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import Experience from '../../experience.js'
+import EntityCollisionSystem from '../entity-collision.js'
 import Zombie, { ZombieState } from './zombie.js'
 
 export default class EnemyManager {
@@ -11,8 +12,11 @@ export default class EnemyManager {
 
     this.activeEnemies = []
 
+    // Shared collision system for all zombies (avoids duplicating GPU debug resources)
+    this.sharedCollision = new EntityCollisionSystem()
+
     this.config = {
-      maxZombies: 5,
+      maxZombies: 3,
       spawnInterval: 5.0, // seconds
       spawnRadiusMin: 25,
       spawnRadiusMax: 45,
@@ -38,8 +42,11 @@ export default class EnemyManager {
 
   _handleSpawningAndDespawning(dt) {
     const playerPos = this.player.movement.position
-    // TODO: Connect to Environment time later. Assume night for now.
-    const isNight = true
+
+    // Check night via DayCycle phase
+    const dayCycle = this.world?.environment?.dayCycle
+    const phase = dayCycle?._getPhaseInfo()?.phase ?? 'noon'
+    const isNight = phase === 'midnight' || phase === 'dusk' || phase === 'sunset'
 
     // Despawn check
     for (let i = this.activeEnemies.length - 1; i >= 0; i--) {
@@ -69,7 +76,7 @@ export default class EnemyManager {
     const spawnX = playerPos.x + Math.cos(angle) * radius
     const spawnZ = playerPos.z + Math.sin(angle) * radius
 
-    const zombie = new Zombie()
+    const zombie = new Zombie({ collision: this.sharedCollision })
     zombie.setSafeSpawn(spawnX, spawnZ)
     this.activeEnemies.push(zombie)
   }
@@ -111,5 +118,6 @@ export default class EnemyManager {
       zombie.destroy()
     }
     this.activeEnemies = []
+    this.sharedCollision = null
   }
 }
