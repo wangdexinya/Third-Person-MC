@@ -20,6 +20,7 @@ export default class InputManager {
       c: false,
       q: false,
       capslock: false,
+      y: false,
     }
 
     // 鼠标按键状态
@@ -153,6 +154,11 @@ export default class InputManager {
           emitter.emit('input:respawn')
         }
         this.keys.r = isPressed
+        break
+      case 'y':
+        this.keys.y = isPressed
+        // 后视镜：持续状态模式（按住生效，松开恢复）
+        emitter.emit('input:rear_view', isPressed)
         break
       case 'capslock':
         if (this.keys.capslock !== isPressed) {

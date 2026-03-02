@@ -6,7 +6,7 @@ export const CAMERA_RIG_CONFIG = {
     // 相机相对于玩家的偏移（玩家在右下角）
     offset: new THREE.Vector3(2, 1.5, 3.5), // x: 右侧, y: 上方, z: 后方
     // 目标点相对于玩家的偏移（看向前方中央）
-    targetOffset: new THREE.Vector3(0, 1.5, -5.5), // 看向玩家前方5.5米，高度1.5米
+    targetOffset: new THREE.Vector3(0, 1.8, -5.5), // 看向玩家前方5.5米，高度1.5米
     // 平滑跟随速度 (位置惯性)
     smoothSpeed: 0.1,
     // 视角平滑速度 (LookAt Smoothing)
@@ -21,6 +21,14 @@ export const CAMERA_RIG_CONFIG = {
       damping: 3.5, // 速度阻尼
       unlockReset: true, // 鼠标解锁时重置
     },
+  },
+  // 正后方居中拔高模式 (Tab 第三态)
+  centerElevated: {
+    heightBoost: 1.0, // Y 轴额外拔高 (米)
+  },
+  // 后视镜 (Y 键按住)
+  rearView: {
+    transitionDuration: 0.35, // 过渡时间 (秒)
   },
 
   // ===== Tracking Shot 配置 =====

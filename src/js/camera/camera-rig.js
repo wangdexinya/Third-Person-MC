@@ -67,9 +67,14 @@ export default class CameraRig {
 
     // 初始化时记录偏移量的绝对值，用于切换时的基准
     this._cachedMagnitude = Math.abs(this.config.follow.offset.x)
-    this._currentSide = Math.sign(this.config.follow.offset.x) || 1
+    // 肩膀模式：'right' | 'left' | 'center'
+    this._shoulderMode = 'right'
     // 用于控制左右切换的因子 (-1 到 1)，平滑过渡
-    this._sideFactor = this._currentSide
+    this._sideFactor = 1
+    // 居中拔高因子 (0 = 正常, 1 = 拔高)
+    this._heightBoost = 0
+    // 后视镜因子 (0 = 正常, 1 = 完全镜像)
+    this._rearViewFactor = 0
 
     // 洞内状态管理
     this.isInCave = false // 当前是否在洞内（头顶有方块）
@@ -98,6 +103,10 @@ export default class CameraRig {
   _setupEventListeners() {
     emitter.on('input:telescope', (isActive) => {
       this.isTelescopeActive = isActive
+    })
+
+    emitter.on('input:rear_view', (isActive) => {
+      this.setRearView(isActive)
     })
 
     emitter.on('input:mouse_move', ({ movementY }) => {
@@ -197,15 +206,37 @@ export default class CameraRig {
   }
 
   toggleSide() {
-    // 切换方向
-    this._currentSide *= -1
+    // 三态循环：right → left → center → right
+    const modes = ['right', 'left', 'center']
+    const currentIndex = modes.indexOf(this._shoulderMode)
+    this._shoulderMode = modes[(currentIndex + 1) % modes.length]
 
-    // 使用 GSAP 平滑过渡 sideFactor
+    const targetSide = this._shoulderMode === 'right'
+      ? 1
+      : this._shoulderMode === 'left'
+        ? -1
+        : 0
+    const targetHeight = this._shoulderMode === 'center'
+      ? this.config.centerElevated.heightBoost
+      : 0
+
+    // 使用 GSAP 平滑过渡 sideFactor 和 heightBoost
     gsap.to(this, {
-      _sideFactor: this._currentSide,
+      _sideFactor: targetSide,
+      _heightBoost: targetHeight,
       duration: 0.6,
       ease: 'power2.inOut',
-      overwrite: true, // 确保覆盖之前的动画
+      overwrite: true,
+    })
+  }
+
+  setRearView(active) {
+    const duration = this.config.rearView.transitionDuration
+    gsap.to(this, {
+      _rearViewFactor: active ? 1 : 0,
+      duration,
+      ease: active ? 'power2.out' : 'power2.in',
+      overwrite: 'auto',
     })
   }
 
@@ -256,18 +287,21 @@ export default class CameraRig {
     // 3. 使用帧率无关阻尼平滑相机偏移 (lambda = 8，约 150ms 响应)
     dampVec3(this._targetOffset, targetCamOffset, 8, dt)
 
-    // 4. 直接驱动 cameraAnchor (无中间 lerp)
+    // 4. 直接驱动 cameraAnchor
+    // 后视镜：X 和 Z 方向翻转 (rv 从 0→1 时，(1-2*rv) 从 1→-1)
+    const rv = this._rearViewFactor
+    const mirrorFactor = 1 - 2 * rv
     this.cameraAnchor.position.set(
-      this._targetOffset.x * this._sideFactor,
-      this._targetOffset.y,
-      this._targetOffset.z,
+      this._targetOffset.x * this._sideFactor * mirrorFactor,
+      this._targetOffset.y + this._heightBoost,
+      this._targetOffset.z * mirrorFactor,
     )
 
-    // 5. 目标点偏移 - 直接设置 (LookAt 即时响应，无二次平滑)
+    // 5. 目标点偏移 - Z 也受后视镜影响
     this.targetAnchor.position.set(
       targetLookOffset.x,
       targetLookOffset.y + this.mouseYOffset,
-      targetLookOffset.z,
+      targetLookOffset.z * mirrorFactor,
     )
 
     // 6. 更新玩家透明度 (如果在洞内则变为半透明)
@@ -364,7 +398,8 @@ export default class CameraRig {
     if (this.isTelescopeActive && this.config.trackingShot.telescope.enabled) {
       targetFov = this.config.trackingShot.telescope.fov
       dampingLambda = this.config.trackingShot.telescope.smoothSpeed
-    } else if (this.config.trackingShot.fov.enabled) {
+    }
+    else if (this.config.trackingShot.fov.enabled) {
       // 动态 FOV（跑动时扩大视野）
       const { baseFov, maxFov, speedThreshold } = this.config.trackingShot.fov
       const speedRatio = Math.min(speed / speedThreshold, 1.0)
