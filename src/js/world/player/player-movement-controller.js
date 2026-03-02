@@ -64,6 +64,19 @@ export class PlayerMovementController {
   }
 
   /**
+   * Apply knockback force to player
+   * @param {THREE.Vector3} direction - knockback direction (horizontal)
+   * @param {number} horizontalForce - horizontal force magnitude
+   * @param {number} verticalForce - vertical force magnitude
+   */
+  applyKnockback(direction, horizontalForce = 6, verticalForce = 5) {
+    this.worldVelocity.x = direction.x * horizontalForce
+    this.worldVelocity.z = direction.z * horizontalForce
+    this.worldVelocity.y = verticalForce
+    this.isGrounded = false
+  }
+
+  /**
    * 角色跳跃：依赖当前分支调用不同实现
    */
   jump() {

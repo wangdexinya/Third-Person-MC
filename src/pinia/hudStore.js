@@ -304,6 +304,34 @@ export const useHudStore = defineStore('hud', () => {
   }
 
   // ========================================
+  // Combat Health Actions
+  // ========================================
+
+  /**
+   * Apply damage to player health
+   * @param {number} amount - damage amount
+   */
+  function takeDamage(amount) {
+    health.value = Math.max(0, health.value - amount)
+  }
+
+  /**
+   * Heal player
+   * @param {number} amount - heal amount
+   */
+  function heal(amount) {
+    health.value = Math.min(maxHealth.value, health.value + amount)
+  }
+
+  /**
+   * Set health to a specific value (clamped)
+   * @param {number} value - target health
+   */
+  function setHealth(value) {
+    health.value = Math.max(0, Math.min(maxHealth.value, value))
+  }
+
+  // ========================================
   // Event Listeners Setup
   // ========================================
 
@@ -382,6 +410,9 @@ export const useHudStore = defineStore('hud', () => {
     addItemToHotbar,
     consumeSelectedItem,
     getSelectedBlockId,
+    takeDamage,
+    heal,
+    setHealth,
 
     // Lifecycle
     setupListeners,

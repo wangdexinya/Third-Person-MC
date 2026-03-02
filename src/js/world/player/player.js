@@ -1,10 +1,12 @@
 import * as THREE from 'three'
+import { useHudStore } from '../../../pinia/hudStore.js'
 import { useSkinStore } from '../../../pinia/skinStore.js'
 import { CAMERA_RIG_CONFIG } from '../../camera/camera-rig-config.js'
 import { PLAYER_CONFIG } from '../../config/player-config.js'
 import { SHADOW_QUALITY } from '../../config/shadow-config.js'
 import { SKIN_LIST } from '../../config/skin-config.js'
 import Experience from '../../experience.js'
+import { calculateKnockbackDir, isInAttackCone } from '../../utils/combat-utils.js'
 import emitter from '../../utils/event/event-bus.js'
 import {
   AnimationCategories,
@@ -62,6 +64,22 @@ export default class Player {
     this.isMining = false
     // 望远镜状态
     this.isTelescopeActive = false
+
+    // Attack cooldown system
+    this.attackCooldown = 0
+    this.ATTACK_COOLDOWN = 0.5 // 500ms cooldown
+
+    // Attack config
+    this.attackConfig = {
+      range: 2.0,
+      fov: Math.PI * (120 / 180), // 120 degrees
+      damage: 5,
+    }
+
+    // Invulnerability system
+    this.isInvulnerable = false
+    this.invulnerabilityDuration = 1.0 // 1 second
+    this.invulnerabilityTimer = 0
 
     // Resource - 使用当前选中的皮肤
     const skinStore = useSkinStore()
@@ -242,20 +260,26 @@ export default class Player {
 
     // 直拳（Z键）- 左右交替
     emitter.on('input:punch_straight', () => {
+      if (this.attackCooldown > 0)
+        return
       const anim = this._useLeftStraight
         ? AnimationClips.STRAIGHT_PUNCH // 左直拳
         : AnimationClips.RIGHT_STRAIGHT_PUNCH // 右直拳
       this._useLeftStraight = !this._useLeftStraight // 切换下次使用的手
       this.animation.triggerAttack(anim)
+      this.handleAttack()
     })
 
     // 勾拳（X键）- 左右交替
     emitter.on('input:punch_hook', () => {
+      if (this.attackCooldown > 0)
+        return
       const anim = this._useLeftHook
         ? AnimationClips.HOOK_PUNCH // 左勾拳
         : AnimationClips.RIGHT_HOOK_PUNCH // 右勾拳
       this._useLeftHook = !this._useLeftHook // 切换下次使用的手
       this.animation.triggerAttack(anim)
+      this.handleAttack()
     })
 
     // 格挡（C键）- 保持原逻辑
@@ -320,8 +344,112 @@ export default class Player {
     this.movement.setPosition(x, y, z)
   }
 
+  /**
+   * Take damage: flash red, knockback, invulnerability, death check
+   * @param {number} amount - damage amount
+   * @param {THREE.Vector3} knockbackDir - knockback direction
+   */
+  takeDamage(amount, knockbackDir) {
+    if (this.isInvulnerable)
+      return
+
+    const hudStore = useHudStore()
+    hudStore.takeDamage(amount)
+
+    // Enable invulnerability
+    this.isInvulnerable = true
+    this.invulnerabilityTimer = this.invulnerabilityDuration
+
+    // Flash red - clone materials
+    this.model.traverse((child) => {
+      if (child.isMesh && child.material) {
+        if (!child.userData.isCloned) {
+          child.userData.originalMaterial = child.material
+          child.material = child.material.clone()
+          child.userData.isCloned = true
+        }
+        if (!child.userData.flashOriginalColor) {
+          child.userData.flashOriginalColor = child.material.color.clone()
+        }
+        child.material.color.setHex(0xFF5555)
+      }
+    })
+
+    // Restore color after 200ms
+    setTimeout(() => {
+      if (!this.model)
+        return
+      this.model.traverse((child) => {
+        if (child.isMesh && child.material && child.userData.flashOriginalColor) {
+          child.material.color.copy(child.userData.flashOriginalColor)
+        }
+      })
+    }, 200)
+
+    // Knockback
+    if (knockbackDir && this.movement) {
+      this.movement.applyKnockback(knockbackDir, 6, 5)
+    }
+
+    // Death check
+    if (hudStore.health <= 0) {
+      this.die()
+    }
+  }
+
+  /**
+   * Handle player death: delayed respawn with full health restore
+   */
+  die() {
+    setTimeout(() => {
+      this.respawn()
+      const hudStore = useHudStore()
+      hudStore.setHealth(hudStore.maxHealth)
+    }, 1000)
+  }
+
+  /**
+   * Handle attack: check cooldown, detect hits, apply damage
+   */
+  handleAttack() {
+    if (this.attackCooldown > 0)
+      return
+
+    const enemyManager = this.experience.world?.enemyManager
+    if (!enemyManager)
+      return
+
+    this.attackCooldown = this.ATTACK_COOLDOWN
+
+    const { range, fov, damage } = this.attackConfig
+    const attackerPos = this.getPosition()
+    const attackerAngle = this.movement.facingAngle
+
+    enemyManager.activeEnemies.forEach((zombie) => {
+      if (isInAttackCone(attackerPos, attackerAngle, zombie.movement.position, range, fov)) {
+        const knockbackDir = calculateKnockbackDir(attackerPos, zombie.movement.position)
+        zombie.takeDamage(damage, knockbackDir)
+      }
+    })
+  }
+
   update() {
     const isCombat = this.animation.stateMachine.currentState?.name === AnimationStates.COMBAT
+
+    // Update attack cooldown
+    if (this.attackCooldown > 0) {
+      const dt = this.time.delta * 0.001
+      this.attackCooldown = Math.max(0, this.attackCooldown - dt)
+    }
+
+    // Update invulnerability timer
+    if (this.isInvulnerable && this.invulnerabilityTimer > 0) {
+      const dt = this.time.delta * 0.001
+      this.invulnerabilityTimer -= dt
+      if (this.invulnerabilityTimer <= 0) {
+        this.isInvulnerable = false
+      }
+    }
 
     // Resolve Input (Conflict & Normalize)
     const { resolvedInput, weights } = resolveDirectionInput(this.inputState)
@@ -591,6 +719,50 @@ export default class Player {
         readonly: true,
       })
     }
+
+    // ===== 战斗调试 =====
+    const combatFolder = this.debugFolder.addFolder({
+      title: '战斗系统',
+      expanded: false,
+    })
+
+    combatFolder.addBinding(this.attackConfig, 'range', {
+      label: '攻击范围',
+      min: 0.5,
+      max: 5.0,
+      step: 0.1,
+    })
+
+    combatFolder.addBinding(this.attackConfig, 'damage', {
+      label: '攻击伤害',
+      min: 1,
+      max: 20,
+      step: 1,
+    })
+
+    combatFolder.addBinding(this, 'attackCooldown', {
+      label: '当前冷却',
+      readonly: true,
+    })
+
+    combatFolder.addBinding(this, 'isInvulnerable', {
+      label: '无敌状态',
+      readonly: true,
+    })
+
+    // Test button
+    const testParams = { damage: 2 }
+    combatFolder.addBinding(testParams, 'damage', {
+      label: '测试伤害值',
+      min: 1,
+      max: 10,
+      step: 1,
+    })
+    combatFolder.addButton({
+      title: '对自己造成伤害',
+    }).on('click', () => {
+      this.takeDamage(testParams.damage, new THREE.Vector3(1, 0, 0))
+    })
 
     // ===== 重生设置 =====
     const respawnFolder = this.debugFolder.addFolder({

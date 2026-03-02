@@ -1,5 +1,6 @@
 import * as THREE from 'three'
 import Experience from '../../experience.js'
+import { calculateKnockbackDir } from '../../utils/combat-utils.js'
 import { ZombieState } from './zombie.js'
 
 export class ZombieMovementController {
@@ -32,6 +33,7 @@ export class ZombieMovementController {
     this.attackCooldown = 0
     this.wanderTimer = 0
     this.wanderDirection = new THREE.Vector3()
+    this.hasDealtDamage = false // Track if damage was dealt this attack cycle
 
     // Pre-allocated temp vectors to avoid per-frame GC pressure
     this._tempDir = new THREE.Vector3()
@@ -48,6 +50,19 @@ export class ZombieMovementController {
       worldVelocity: this.worldVelocity,
       isGrounded: false,
     }
+  }
+
+  applyKnockback(direction, horizontalForce, verticalForce) {
+    // 强制脱离地面，允许抛物线运动
+    if (verticalForce > 0) {
+      this.isGrounded = false
+      this.worldVelocity.y = verticalForce
+    }
+    this.knockbackVelocity = new THREE.Vector3(
+      direction.x * horizontalForce,
+      0, // verticalForce is handled by worldVelocity.y
+      direction.z * horizontalForce
+    )
   }
 
   update(playerPos, currentState) {
@@ -71,6 +86,15 @@ export class ZombieMovementController {
       if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
         newState = ZombieState.ATTACK
         this.attackCooldown = 1.0
+        this.hasDealtDamage = false // New attack cycle
+
+        // Deal damage immediately on entering ATTACK
+        const player = this.experience.world?.player
+        if (player) {
+          const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+          player.takeDamage(2, knockbackDir)
+        }
+        this.hasDealtDamage = true
       }
       else if (distanceToPlayer <= this.AGGRO_RANGE && distanceToPlayer > this.ATTACK_RANGE) {
         newState = ZombieState.CHASE
@@ -97,13 +121,25 @@ export class ZombieMovementController {
       }
       else if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
         newState = ZombieState.IDLE
+        this.hasDealtDamage = false
       }
       else if (distanceToPlayer <= this.ATTACK_RANGE) {
         newState = ZombieState.ATTACK
         this.attackCooldown = 1.0
+
+        // Deal damage once per new attack cycle
+        if (!this.hasDealtDamage) {
+          const player = this.experience.world?.player
+          if (player) {
+            const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+            player.takeDamage(2, knockbackDir)
+          }
+          this.hasDealtDamage = true
+        }
       }
       else {
         newState = ZombieState.CHASE
+        this.hasDealtDamage = false
       }
     }
     else if (currentState === ZombieState.CHASE) {
