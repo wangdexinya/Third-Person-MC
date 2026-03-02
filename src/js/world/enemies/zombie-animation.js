@@ -26,7 +26,7 @@ export class ZombieAnimationController {
       }
       else if (name.includes('attack')) {
         const action = this.mixer.clipAction(clip)
-        action.setEffectiveTimeScale(1.0)
+        action.setEffectiveTimeScale(2.2)
         // Set the latest attack to ZombieState.ATTACK. It could be attack1 or attack2.
         this.actions[ZombieState.ATTACK] = action
       }
