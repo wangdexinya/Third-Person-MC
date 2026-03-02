@@ -121,14 +121,20 @@ export class PlayerMovementController {
       this.worldVelocity.z = worldZ * currentSpeed * dirScale
     }
 
-    // 重力
-    this.worldVelocity.y += this.gravity * dt
+    // Gravity: skip accumulation when grounded, use a small probe velocity instead
+    // This prevents the gravity-vs-collision tug-of-war that causes visible jitter
+    if (this.isGrounded) {
+      this.worldVelocity.y = -1.5 // Small probe to maintain ground contact detection
+    }
+    else {
+      this.worldVelocity.y += this.gravity * dt
+    }
 
     // 预测位置
     const nextPosition = new THREE.Vector3().copy(this.position).addScaledVector(this.worldVelocity, dt)
 
-    // 构建胶囊状态（继承上一帧的 isGrounded 状态，避免高频切换）
-    const playerState = this._buildPlayerState(nextPosition, this.isGrounded)
+    // Build capsule state (isGrounded starts false, collision system will re-establish)
+    const playerState = this._buildPlayerState(nextPosition)
 
     // 地形查询提供者：优先使用 experience 挂载的 ChunkManager
     const provider = this.experience.terrainDataManager || this.terrainProvider
@@ -136,18 +142,7 @@ export class PlayerMovementController {
     const collisions = this.collision.narrowPhase(candidates, playerState)
     this.collision.resolveCollisions(collisions, playerState)
 
-    // 同步结果
-    // 状态保持：如果上一帧是 grounded，且当前没有明显上升速度，保持 grounded 状态
-    // 这样可以避免因数值精度或微小振荡导致的高频切换
-    if (this.isGrounded && !playerState.isGrounded && playerState.worldVelocity.y < 0.5) {
-      // 上一帧在地面，当前帧未检测到地面碰撞，但速度向下或很小，保持 grounded
-      playerState.isGrounded = true
-    }
-    // 如果明显上升（跳跃），则清除 grounded 状态
-    if (playerState.worldVelocity.y > 1.0) {
-      playerState.isGrounded = false
-    }
-
+    // Sync results
     this.isGrounded = playerState.isGrounded
     this.position.copy(playerState.basePosition)
     this.worldVelocity.copy(playerState.worldVelocity)
@@ -215,10 +210,9 @@ export class PlayerMovementController {
   /**
    * 构建当前胶囊体状态
    * @param {THREE.Vector3} basePosition 脚底世界坐标
-   * @param {boolean} previousIsGrounded 上一帧的 isGrounded 状态（用于状态保持）
    * @returns {{ basePosition:THREE.Vector3, center:THREE.Vector3, halfHeight:number, radius:number, worldVelocity:THREE.Vector3, isGrounded:boolean }} 当前帧胶囊体状态（供碰撞系统就地修改）
    */
-  _buildPlayerState(basePosition, previousIsGrounded = false) {
+  _buildPlayerState(basePosition) {
     const center = new THREE.Vector3().copy(basePosition).add(this.capsule.offset)
     return {
       basePosition,
@@ -226,8 +220,8 @@ export class PlayerMovementController {
       halfHeight: this.capsule.halfHeight,
       radius: this.capsule.radius,
       worldVelocity: this.worldVelocity,
-      // 初始化为上一帧状态，碰撞检测会更新它
-      isGrounded: previousIsGrounded,
+      // Always start false; collision system will set true on ground contact
+      isGrounded: false,
     }
   }
 

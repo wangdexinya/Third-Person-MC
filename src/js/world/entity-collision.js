@@ -124,7 +124,7 @@ export default class EntityCollisionSystem {
       }
       collisions.push({
         block,
-        contactPoint: closestPoint.clone(),  // Must clone since _tempClosest is reused
+        contactPoint: closestPoint.clone(), // Must clone since _tempClosest is reused
         normal: collision.normal,
         overlap: collision.overlap,
         ground: collision.ground,
@@ -185,10 +185,14 @@ export default class EntityCollisionSystem {
           playerState.worldVelocity.addScaledVector(collision.normal, -vn)
         }
 
-        // 地面判定：法线向上即可视为着地
+        // Ground detection: normal pointing up means standing on ground
         if (collision.ground) {
           playerState.isGrounded = true
-          // 防止在地面上继续积累下落速度
+          // Snap Y to exact block top surface to prevent floating point drift
+          const blockTopY = collision.block.y + 0.5
+          playerState.basePosition.y = blockTopY
+          playerState.center.y = blockTopY + playerState.halfHeight + playerState.radius
+          // Clear downward velocity
           if (playerState.worldVelocity.y < 0) {
             playerState.worldVelocity.y = 0
           }

@@ -18,7 +18,8 @@ export default class Time {
 
   tick() {
     const currentTime = Date.now()
-    this.delta = currentTime - this.current
+    // Clamp delta to 100ms max to prevent physics tunneling when tab is backgrounded
+    this.delta = Math.min(currentTime - this.current, 100)
     this.current = currentTime
     this.elapsed = this.current - this.start
 
