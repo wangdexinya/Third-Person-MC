@@ -90,18 +90,29 @@ export class ZombieMovementController {
         }
       }
     }
-    else if (currentState === ZombieState.CHASE || currentState === ZombieState.ATTACK) {
-      if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
+    else if (currentState === ZombieState.ATTACK) {
+      // 攻击尚未结束 — 保持 ATTACK 状态，等冷却走完再允许转换
+      if (this.attackCooldown > 0) {
+        newState = ZombieState.ATTACK
+      }
+      else if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
         newState = ZombieState.IDLE
       }
       else if (distanceToPlayer <= this.ATTACK_RANGE) {
-        if (this.attackCooldown <= 0) {
-          newState = ZombieState.ATTACK
-          this.attackCooldown = 1.0
-        }
-        else {
-          newState = ZombieState.IDLE
-        }
+        newState = ZombieState.ATTACK
+        this.attackCooldown = 1.0
+      }
+      else {
+        newState = ZombieState.CHASE
+      }
+    }
+    else if (currentState === ZombieState.CHASE) {
+      if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
+        newState = ZombieState.IDLE
+      }
+      else if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
+        newState = ZombieState.ATTACK
+        this.attackCooldown = 1.0
       }
       else {
         newState = ZombieState.CHASE
