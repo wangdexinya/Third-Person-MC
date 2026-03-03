@@ -6,7 +6,7 @@ import { PLAYER_CONFIG } from '../../config/player-config.js'
 import { SHADOW_QUALITY } from '../../config/shadow-config.js'
 import { SKIN_LIST } from '../../config/skin-config.js'
 import Experience from '../../experience.js'
-import { calculateKnockbackDir, isInAttackCone } from '../../utils/combat-utils.js'
+import { calculateKnockbackDir, createAttackBoxHelper, isInAttackBox, updateAttackBoxHelper } from '../../utils/combat-utils.js'
 import emitter from '../../utils/event/event-bus.js'
 import {
   AnimationCategories,
@@ -69,12 +69,13 @@ export default class Player {
     this.attackCooldown = 0
     this.ATTACK_COOLDOWN = 0.5 // 500ms cooldown
 
-    // Attack config
+    // Attack config (width x depth for box detection)
     this.attackConfig = {
-      range: 2.0,
-      fov: Math.PI * (120 / 180), // 120 degrees
+      width: 3.0, // lateral sweep range
+      depth: 1.5, // forward extension
       damage: 5,
     }
+    this.showAttackBox = false // debug visualization toggle
 
     // Invulnerability system
     this.isInvulnerable = false
@@ -421,12 +422,16 @@ export default class Player {
 
     this.attackCooldown = this.ATTACK_COOLDOWN
 
-    const { range, fov, damage } = this.attackConfig
+    const { width, depth, damage } = this.attackConfig
     const attackerPos = this.getPosition()
-    const attackerAngle = this.movement.facingAngle
+
+    // Player forward direction: model.rotation.y = PI corrects model to face group's -Z
+    // Group -Z in world = (-sin(facingAngle), -cos(facingAngle))
+    const angle = this.movement.facingAngle
+    const forwardDir = { x: -Math.sin(angle), z: -Math.cos(angle) }
 
     enemyManager.activeEnemies.forEach((zombie) => {
-      if (isInAttackCone(attackerPos, attackerAngle, zombie.movement.position, range, fov)) {
+      if (isInAttackBox(attackerPos, forwardDir, zombie.movement.position, width, depth)) {
         const knockbackDir = calculateKnockbackDir(attackerPos, zombie.movement.position)
         zombie.takeDamage(damage, knockbackDir)
       }
@@ -449,6 +454,21 @@ export default class Player {
       if (this.invulnerabilityTimer <= 0) {
         this.isInvulnerable = false
       }
+    }
+
+    // Debug attack box visualization
+    if (this.showAttackBox) {
+      if (!this._attackBoxHelper) {
+        this._attackBoxHelper = createAttackBoxHelper(0xFF0000)
+        this.scene.add(this._attackBoxHelper)
+      }
+      this._attackBoxHelper.visible = true
+      const angle = this.movement.facingAngle
+      const fwd = { x: -Math.sin(angle), z: -Math.cos(angle) }
+      updateAttackBoxHelper(this._attackBoxHelper, this.movement.position, fwd, this.attackConfig.width, this.attackConfig.depth)
+    }
+    else if (this._attackBoxHelper) {
+      this._attackBoxHelper.visible = false
     }
 
     // Resolve Input (Conflict & Normalize)
@@ -726,8 +746,15 @@ export default class Player {
       expanded: false,
     })
 
-    combatFolder.addBinding(this.attackConfig, 'range', {
-      label: '攻击范围',
+    combatFolder.addBinding(this.attackConfig, 'width', {
+      label: '攻击宽度',
+      min: 0.5,
+      max: 6.0,
+      step: 0.1,
+    })
+
+    combatFolder.addBinding(this.attackConfig, 'depth', {
+      label: '攻击深度',
       min: 0.5,
       max: 5.0,
       step: 0.1,
@@ -738,6 +765,10 @@ export default class Player {
       min: 1,
       max: 20,
       step: 1,
+    })
+
+    combatFolder.addBinding(this, 'showAttackBox', {
+      label: '显示攻击范围',
     })
 
     combatFolder.addBinding(this, 'attackCooldown', {
