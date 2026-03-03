@@ -60,7 +60,7 @@ export default class Zombie {
     }
   }
 
-  takeDamage(amount, knockbackDir) {
+  takeDamage(amount) {
     this.health -= amount
 
     // Flash Red - clone materials to avoid affecting other zombies
@@ -92,8 +92,12 @@ export default class Zombie {
     }, 200)
 
     // Knockback
-    if (knockbackDir && this.movement) {
-      this.movement.applyKnockback(knockbackDir)
+    if (this.movement) {
+      // 根据受击时自身的面朝方向，向后小幅击退
+      const rot = this.group.rotation.y
+      const backDir = new THREE.Vector3(-Math.sin(rot), 0, -Math.cos(rot)).normalize()
+      // 参数：方向, 水平击退力, 垂直击退力
+      this.movement.applyKnockback(backDir, 4, 3)
     }
 
     if (this.health <= 0) {
@@ -105,7 +109,8 @@ export default class Zombie {
    * Play death animation then destroy after it finishes
    */
   die() {
-    if (this.isDead) return
+    if (this.isDead)
+      return
     this.isDead = true
 
     // Stop movement
@@ -116,15 +121,15 @@ export default class Zombie {
     // Play death animation
     const duration = this.animation?.playDeath() ?? 0
 
-    // Remove from EnemyManager immediately (stop AI updates) but keep visual
-    const enemyManager = this.experience.world?.enemyManager
-    if (enemyManager) {
-      const idx = enemyManager.activeEnemies.indexOf(this)
-      if (idx !== -1) enemyManager.activeEnemies.splice(idx, 1)
-    }
-
     // Destroy after animation finishes
     setTimeout(() => {
+      // Remove from EnemyManager right before destroy
+      const enemyManager = this.experience.world?.enemyManager
+      if (enemyManager) {
+        const idx = enemyManager.activeEnemies.indexOf(this)
+        if (idx !== -1)
+          enemyManager.activeEnemies.splice(idx, 1)
+      }
       this.destroy()
     }, duration * 1000 + 200) // small buffer
   }
@@ -163,6 +168,10 @@ export default class Zombie {
   }
 
   destroy() {
+    if (this.isDestroyed)
+      return
+    this.isDestroyed = true
+
     this.scene.remove(this.group)
     this.model.traverse((child) => {
       if (child instanceof THREE.Mesh) {

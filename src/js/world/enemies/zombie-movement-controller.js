@@ -1,6 +1,6 @@
 import * as THREE from 'three'
 import Experience from '../../experience.js'
-import { calculateKnockbackDir } from '../../utils/combat-utils.js'
+import { calculateKnockbackDir, isInAttackBox } from '../../utils/combat-utils.js'
 import { ZombieState } from './zombie.js'
 
 export class ZombieMovementController {
@@ -35,6 +35,13 @@ export class ZombieMovementController {
     this.wanderDirection = new THREE.Vector3()
     this.hasDealtDamage = false // Track if damage was dealt this attack cycle
 
+    this.knockbackVelocity = new THREE.Vector3()
+    this.knockbackTimer = 0
+
+    // Zombie attack box config (width x depth)
+    this.attackBoxWidth = 2.0
+    this.attackBoxDepth = 1.0
+
     // Pre-allocated temp vectors to avoid per-frame GC pressure
     this._tempDir = new THREE.Vector3()
     this._tempNextPos = new THREE.Vector3()
@@ -52,22 +59,24 @@ export class ZombieMovementController {
     }
   }
 
-  applyKnockback(direction, horizontalForce, verticalForce) {
+  applyKnockback(direction, horizontalForce = 3, verticalForce = 3) {
     // 强制脱离地面，允许抛物线运动
     if (verticalForce > 0) {
       this.isGrounded = false
       this.worldVelocity.y = verticalForce
     }
-    this.knockbackVelocity = new THREE.Vector3(
+    this.knockbackVelocity.set(
       direction.x * horizontalForce,
       0, // verticalForce is handled by worldVelocity.y
-      direction.z * horizontalForce
+      direction.z * horizontalForce,
     )
+    this.knockbackTimer = 0.25 // 250ms knockback state
   }
 
   update(playerPos, currentState) {
     const dt = this.experience.time.delta * 0.001
-    if (!this.collision) return currentState
+    if (!this.collision)
+      return currentState
 
     this.collision.prepareFrame()
 
@@ -81,18 +90,36 @@ export class ZombieMovementController {
 
     let newState = currentState
 
-    // 2. Determine State based on distance and cooldown
-    if (currentState === ZombieState.IDLE || currentState === ZombieState.WANDER) {
-      if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
+    if (this.knockbackTimer > 0) {
+      this.knockbackTimer -= dt
+      this.worldVelocity.x = this.knockbackVelocity.x
+      this.worldVelocity.z = this.knockbackVelocity.z
+      
+      // Apply friction to knockback
+      this.knockbackVelocity.multiplyScalar(0.9)
+    } else {
+      // 2. Determine State based on distance and cooldown
+      if (currentState === ZombieState.IDLE || currentState === ZombieState.WANDER) {
+        if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
         newState = ZombieState.ATTACK
         this.attackCooldown = 1.0
         this.hasDealtDamage = false // New attack cycle
 
-        // Deal damage immediately on entering ATTACK
+        // Update rotation immediately before attacking
+        if (distanceToPlayer > 0) {
+          const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+          this.group.rotation.y = angle
+        }
+
+        // Deal damage immediately on entering ATTACK (using box check)
         const player = this.experience.world?.player
         if (player) {
-          const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
-          player.takeDamage(2, knockbackDir)
+          const rot = this.group.rotation.y
+          const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
+          if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
+            const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+            player.takeDamage(2, knockbackDir)
+          }
         }
         this.hasDealtDamage = true
       }
@@ -127,12 +154,22 @@ export class ZombieMovementController {
         newState = ZombieState.ATTACK
         this.attackCooldown = 1.0
 
-        // Deal damage once per new attack cycle
+        // Update rotation immediately before attacking
+        if (distanceToPlayer > 0) {
+          const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+          this.group.rotation.y = angle
+        }
+
+        // Deal damage once per new attack cycle (using box check)
         if (!this.hasDealtDamage) {
           const player = this.experience.world?.player
           if (player) {
-            const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
-            player.takeDamage(2, knockbackDir)
+            const rot = this.group.rotation.y
+            const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
+            if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
+              const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+              player.takeDamage(2, knockbackDir)
+            }
           }
           this.hasDealtDamage = true
         }
@@ -179,6 +216,7 @@ export class ZombieMovementController {
         const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
         this.group.rotation.y = angle
       }
+    }
     }
 
     // 4. Gravity
@@ -227,4 +265,3 @@ export class ZombieMovementController {
     return newState
   }
 }
-
