@@ -12,7 +12,8 @@ export class ZombieAnimationController {
     // Map existing or imported animations to Zombie actions
     animations.forEach((clip) => {
       const name = clip.name.toLowerCase()
-      if (name.includes('death')) {
+
+      if (name === 'zombie_death') {
         const action = this.mixer.clipAction(clip)
         action.setLoop(THREE.LoopOnce)
         action.clampWhenFinished = true
@@ -28,7 +29,7 @@ export class ZombieAnimationController {
         action.setEffectiveTimeScale(3)
         this.actions[ZombieState.WANDER] = action
       }
-      else if (name === 'zombieidle' || name === 'zombie_idle') {
+      else if (name === 'zombie_idle') {
         const action = this.mixer.clipAction(clip)
         action.setEffectiveTimeScale(3.0)
         this.actions[ZombieState.IDLE] = action
@@ -58,7 +59,8 @@ export class ZombieAnimationController {
    * Play a pseudo-random attack animation (alternates between available attacks)
    */
   playRandomAttack() {
-    if (this.attackActions.length === 0) return
+    if (this.attackActions.length === 0)
+      return
     const action = this.attackActions[this._attackIndex % this.attackActions.length]
     this._attackIndex++
     this.actions[ZombieState.ATTACK] = action
@@ -69,7 +71,8 @@ export class ZombieAnimationController {
    * @returns {number} duration in seconds (0 if no death animation)
    */
   playDeath() {
-    if (!this.deathAction) return 0
+    if (!this.deathAction)
+      return 0
     this.isDying = true
 
     // Fade out current action, play death
@@ -86,7 +89,8 @@ export class ZombieAnimationController {
     this.mixer.update(dt)
 
     // Don't switch animations while dying
-    if (this.isDying) return
+    if (this.isDying)
+      return
 
     // Play animation corresponding to current state
     const targetAction = this.actions[state] || this.actions[ZombieState.IDLE]

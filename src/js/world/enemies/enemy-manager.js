@@ -88,7 +88,7 @@ export default class EnemyManager {
       zombie.update()
 
       // Calculate threat for Gaze effect
-      if (zombie.state === ZombieState.CHASE || zombie.state === ZombieState.ATTACK) {
+      if (!zombie.isDead && (zombie.state === ZombieState.CHASE || zombie.state === ZombieState.ATTACK)) {
         const dist = zombie.movement.position.distanceTo(this.player.movement.position)
         // Threat formula: 1.0 at 3 blocks, 0.0 at 20 blocks
         let threat = 1.0 - ((dist - 3.0) / 17.0)
