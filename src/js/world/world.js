@@ -50,7 +50,7 @@ export default class World {
       chunkWidth: CHUNK_BASIC_CONFIG.chunkWidth,
       chunkHeight: CHUNK_BASIC_CONFIG.chunkHeight,
       viewDistance: CHUNK_BASIC_CONFIG.viewDistance,
-      seed: 1265,
+      seed: 2387213640,
       terrain: {
         scale: TERRAIN_PARAMS.scale,
         magnitude: TERRAIN_PARAMS.magnitude,
