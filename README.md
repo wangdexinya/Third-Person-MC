@@ -138,7 +138,7 @@ E:\圖形學\Third-Person-MC\
 
 ## 素材出处
 - **模型**: 基于 Minecraft 风格自定义建模 ( character.glb )
-- **皮肤**: 
+- **皮肤**:
   - **Steve & Alex**: 由 [hibiki_ekko](https://www.planetminecraft.com/member/hibiki_ekko/) 创作，来源 [Planet Minecraft](https://www.planetminecraft.com/member/hibiki_ekko/)
   - **Classic (Player)**: 由 [holland0519](https://www.minecraftskins.com/profile/5521971/holland0519) 创作，来源 [Minecraft Skins](https://www.minecraftskins.com/profile/5521971/holland0519)
   - 特别感谢 **hibiki_ekko** 和 **holland0519** 为项目提供的精美皮肤资源！
