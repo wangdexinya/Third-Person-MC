@@ -22,7 +22,7 @@ export default class DayCycle {
     // 参数配置
     this.params = {
       // 时间控制
-      timeOfDay: 0.25, // 0-1, 默认早晨 6:00
+      timeOfDay: 0.375, // 0-1, 默认早晨 9:00
       autoPlay: true, // 自动循环
       dayDuration: 20 * 60 * 1000, // 20分钟 = 游戏一天（毫秒）
 
@@ -346,7 +346,7 @@ export default class DayCycle {
   /**
    * 更新天空盒（使用 SkyDome 平滑过渡）
    */
-  _updateSkybox() {
+  _updateSkybox(environment) {
     const { phase, progress, nextPhase } = this._getPhaseInfo()
 
     const currentTex = this.skyTextures[phase]
@@ -362,6 +362,18 @@ export default class DayCycle {
     const mixFactor = progress * progress * (3 - 2 * progress)
 
     this.skyDome.setMixFactor(mixFactor)
+
+    // 更新环境贴图反射 (联动 lighting)
+    if (environment && environment.scene) {
+      // 在平滑过渡期间，当 mixFactor 超过 0.5 时，将反射贴图切换为下一阶段贴图
+      const envTex = mixFactor > 0.5 ? nextTex : currentTex
+      if (environment.scene.environment !== envTex) {
+        environment.scene.environment = envTex
+        if (environment.environmentMap) {
+          environment.environmentMap.texture = envTex
+        }
+      }
+    }
   }
 
   /**
@@ -451,7 +463,7 @@ export default class DayCycle {
     this._updateMoonLight()
 
     // 更新天空盒
-    this._updateSkybox()
+    this._updateSkybox(environment)
 
     // 更新天空球位置（跟随相机）
     if (this.skyDome) {

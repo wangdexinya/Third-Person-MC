@@ -78,7 +78,7 @@ export const useHudStore = defineStore('hud', () => {
   const isChatOpen = ref(false)
 
   // ==================== Info Panel State ====================
-  const gameTime = ref('12:00 PM')
+  const gameTime = ref('9:00 AM')
   const gameDay = ref(1)
   const fps = ref(60)
   const playerCount = ref(1)
@@ -86,7 +86,7 @@ export const useHudStore = defineStore('hud', () => {
 
   // ==================== Day/Night Cycle State ====================
   /** 一天中的时间点 (0-1, 0=midnight, 0.5=noon) */
-  const timeOfDay = ref(0.25)
+  const timeOfDay = ref(0.375)
 
   // ========================================
   // Actions
