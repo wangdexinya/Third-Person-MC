@@ -94,74 +94,25 @@ export class ZombieMovementController {
       this.knockbackTimer -= dt
       this.worldVelocity.x = this.knockbackVelocity.x
       this.worldVelocity.z = this.knockbackVelocity.z
-      
+
       // Apply friction to knockback
       this.knockbackVelocity.multiplyScalar(0.9)
-    } else {
+    }
+    else {
       // 2. Determine State based on distance and cooldown
       if (currentState === ZombieState.IDLE || currentState === ZombieState.WANDER) {
         if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
-        newState = ZombieState.ATTACK
-        this.attackCooldown = 1.0
-        this.hasDealtDamage = false // New attack cycle
+          newState = ZombieState.ATTACK
+          this.attackCooldown = 1.0
+          this.hasDealtDamage = false // New attack cycle
 
-        // Update rotation immediately before attacking
-        if (distanceToPlayer > 0) {
-          const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
-          this.group.rotation.y = angle
-        }
-
-        // Deal damage immediately on entering ATTACK (using box check)
-        const player = this.experience.world?.player
-        if (player) {
-          const rot = this.group.rotation.y
-          const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
-          if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
-            const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
-            player.takeDamage(2, knockbackDir)
+          // Update rotation immediately before attacking
+          if (distanceToPlayer > 0) {
+            const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+            this.group.rotation.y = angle
           }
-        }
-        this.hasDealtDamage = true
-      }
-      else if (distanceToPlayer <= this.AGGRO_RANGE && distanceToPlayer > this.ATTACK_RANGE) {
-        newState = ZombieState.CHASE
-      }
-      else {
-        if (this.wanderTimer <= 0) {
-          if (Math.random() < 0.5) {
-            newState = ZombieState.IDLE
-            this.wanderTimer = 2.0 + Math.random() * 3.0
-          }
-          else {
-            newState = ZombieState.WANDER
-            this.wanderTimer = 2.0 + Math.random() * 3.0
-            const angle = Math.random() * Math.PI * 2
-            this.wanderDirection.set(Math.sin(angle), 0, Math.cos(angle))
-          }
-        }
-      }
-    }
-    else if (currentState === ZombieState.ATTACK) {
-      // 攻击尚未结束 — 保持 ATTACK 状态，等冷却走完再允许转换
-      if (this.attackCooldown > 0) {
-        newState = ZombieState.ATTACK
-      }
-      else if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
-        newState = ZombieState.IDLE
-        this.hasDealtDamage = false
-      }
-      else if (distanceToPlayer <= this.ATTACK_RANGE) {
-        newState = ZombieState.ATTACK
-        this.attackCooldown = 1.0
 
-        // Update rotation immediately before attacking
-        if (distanceToPlayer > 0) {
-          const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
-          this.group.rotation.y = angle
-        }
-
-        // Deal damage once per new attack cycle (using box check)
-        if (!this.hasDealtDamage) {
+          // Deal damage immediately on entering ATTACK (using box check)
           const player = this.experience.world?.player
           if (player) {
             const rot = this.group.rotation.y
@@ -173,50 +124,100 @@ export class ZombieMovementController {
           }
           this.hasDealtDamage = true
         }
+        else if (distanceToPlayer <= this.AGGRO_RANGE && distanceToPlayer > this.ATTACK_RANGE) {
+          newState = ZombieState.CHASE
+        }
+        else {
+          if (this.wanderTimer <= 0) {
+            if (Math.random() < 0.5) {
+              newState = ZombieState.IDLE
+              this.wanderTimer = 2.0 + Math.random() * 3.0
+            }
+            else {
+              newState = ZombieState.WANDER
+              this.wanderTimer = 2.0 + Math.random() * 3.0
+              const angle = Math.random() * Math.PI * 2
+              this.wanderDirection.set(Math.sin(angle), 0, Math.cos(angle))
+            }
+          }
+        }
       }
-      else {
-        newState = ZombieState.CHASE
-        this.hasDealtDamage = false
-      }
-    }
-    else if (currentState === ZombieState.CHASE) {
-      if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
-        newState = ZombieState.IDLE
-      }
-      else if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
-        newState = ZombieState.ATTACK
-        this.attackCooldown = 1.0
-      }
-      else {
-        newState = ZombieState.CHASE
-      }
-    }
+      else if (currentState === ZombieState.ATTACK) {
+      // 攻击尚未结束 — 保持 ATTACK 状态，等冷却走完再允许转换
+        if (this.attackCooldown > 0) {
+          newState = ZombieState.ATTACK
+        }
+        else if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
+          newState = ZombieState.IDLE
+          this.hasDealtDamage = false
+        }
+        else if (distanceToPlayer <= this.ATTACK_RANGE) {
+          newState = ZombieState.ATTACK
+          this.attackCooldown = 1.0
 
-    // 3. Apply Velocity based on State
-    if (newState === ZombieState.CHASE) {
-      directionToPlayer.normalize()
-      this.worldVelocity.x = directionToPlayer.x * this.runSpeed
-      this.worldVelocity.z = directionToPlayer.z * this.runSpeed
+          // Update rotation immediately before attacking
+          if (distanceToPlayer > 0) {
+            const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+            this.group.rotation.y = angle
+          }
 
-      const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
-      this.group.rotation.y = angle
-    }
-    else if (newState === ZombieState.WANDER) {
-      this.worldVelocity.x = this.wanderDirection.x * this.walkSpeed
-      this.worldVelocity.z = this.wanderDirection.z * this.walkSpeed
+          // Deal damage once per new attack cycle (using box check)
+          if (!this.hasDealtDamage) {
+            const player = this.experience.world?.player
+            if (player) {
+              const rot = this.group.rotation.y
+              const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
+              if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
+                const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+                player.takeDamage(2, knockbackDir)
+              }
+            }
+            this.hasDealtDamage = true
+          }
+        }
+        else {
+          newState = ZombieState.CHASE
+          this.hasDealtDamage = false
+        }
+      }
+      else if (currentState === ZombieState.CHASE) {
+        if (distanceToPlayer > this.LOSE_AGGRO_RANGE) {
+          newState = ZombieState.IDLE
+        }
+        else if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
+          newState = ZombieState.ATTACK
+          this.attackCooldown = 1.0
+        }
+        else {
+          newState = ZombieState.CHASE
+        }
+      }
 
-      const angle = Math.atan2(this.wanderDirection.x, this.wanderDirection.z)
-      this.group.rotation.y = angle
-    }
-    else {
-      this.worldVelocity.x = 0
-      this.worldVelocity.z = 0
+      // 3. Apply Velocity based on State
+      if (newState === ZombieState.CHASE) {
+        directionToPlayer.normalize()
+        this.worldVelocity.x = directionToPlayer.x * this.runSpeed
+        this.worldVelocity.z = directionToPlayer.z * this.runSpeed
 
-      if ((newState === ZombieState.ATTACK || (newState === ZombieState.IDLE && distanceToPlayer <= this.ATTACK_RANGE)) && distanceToPlayer > 0) {
         const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
         this.group.rotation.y = angle
       }
-    }
+      else if (newState === ZombieState.WANDER) {
+        this.worldVelocity.x = this.wanderDirection.x * this.walkSpeed
+        this.worldVelocity.z = this.wanderDirection.z * this.walkSpeed
+
+        const angle = Math.atan2(this.wanderDirection.x, this.wanderDirection.z)
+        this.group.rotation.y = angle
+      }
+      else {
+        this.worldVelocity.x = 0
+        this.worldVelocity.z = 0
+
+        if ((newState === ZombieState.ATTACK || (newState === ZombieState.IDLE && distanceToPlayer <= this.ATTACK_RANGE)) && distanceToPlayer > 0) {
+          const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+          this.group.rotation.y = angle
+        }
+      }
     }
 
     // 4. Gravity
