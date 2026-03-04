@@ -115,10 +115,14 @@ export default class PointerLockManager {
     if (!this.isLocked)
       return
 
+    // 为了在不同像素密度的设备（如 Mac Retina 屏幕）上保持一致的游玩视角体验
+    // 使用与 Renderer 相同的 dpr 限制方案来缩放鼠标移动量
+    const dpr = window.devicePixelRatio || 1
+
     // 发送鼠标相对移动量
     emitter.emit('input:mouse_move', {
-      movementX: event.movementX || 0,
-      movementY: event.movementY || 0,
+      movementX: (event.movementX || 0) / dpr,
+      movementY: (event.movementY || 0) / dpr,
     })
   }
 
