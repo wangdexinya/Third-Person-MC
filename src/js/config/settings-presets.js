@@ -139,7 +139,7 @@ export const SPEEDLINES_PRESETS = {
 // ========================================
 export const ENV_DEFAULTS = {
   skyMode: 'Image', // 'Image' | 'HDR'
-  sunIntensity: 1.75,
+  sunIntensity: 1.05,
   ambientIntensity: 0.75,
   fogDensity: 0.01,
 }

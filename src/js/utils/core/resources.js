@@ -4,9 +4,9 @@ import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 import { FBXLoader } from 'three/examples/jsm/loaders/FBXLoader.js'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
+import { HDRLoader } from 'three/examples/jsm/loaders/HDRLoader.js'
 import { KTX2Loader } from 'three/examples/jsm/loaders/KTX2Loader.js'
 import { OBJLoader } from 'three/examples/jsm/loaders/OBJLoader.js'
-import { RGBELoader } from 'three/examples/jsm/loaders/RGBELoader.js'
 import { SVGLoader } from 'three/examples/jsm/loaders/SVGLoader.js'
 
 import Experience from '../../experience.js'
@@ -46,7 +46,7 @@ export default class Resources {
     this.loaders.fbxLoader = new FBXLoader()
     this.loaders.audioLoader = new THREE.AudioLoader()
     this.loaders.objLoader = new OBJLoader()
-    this.loaders.hdrTextureLoader = new RGBELoader()
+    this.loaders.hdrTextureLoader = new HDRLoader()
     this.loaders.svgLoader = new SVGLoader()
     this.loaders.exrLoader = new EXRLoader()
     this.loaders.ktx2Loader = new KTX2Loader()

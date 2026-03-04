@@ -16,7 +16,7 @@ export default class Environment {
       sunPos: { x: 70, y: 70, z: 70 },
       sunTarget: { x: 0, y: 0, z: 0 },
       sunColor: '#ffffff',
-      sunIntensity: 1.75,
+      sunIntensity: 1.05,
       shadowRange: 65,
       shadowNear: 16,
       shadowFar: 256,
@@ -133,10 +133,10 @@ export default class Environment {
 
   setEnvironmentMap() {
     this.environmentMap = {}
-    this.environmentMap.intensity = 1
+    // this.environmentMap.intensity = 0.45
     this.environmentMap.texture = this.resources.items.environmentMapHDRTexture
     this.environmentMap.texture.mapping = THREE.EquirectangularReflectionMapping
-    // this.environmentMap.texture.colorSpace = THREE.SRGBColorSpace // RGBELoader usually handles this, or it might be Linear. Let's check standard implementation.
+    this.environmentMap.texture.colorSpace = THREE.SRGBColorSpace // RGBELoader usually handles this, or it might be Linear. Let's check standard implementation.
 
     // 背景贴图（保留引用，但不设置 scene.background，由 SkyDome 管理）
     this.backgroundTexture = this.resources.items.backgroundTexture
@@ -146,6 +146,7 @@ export default class Environment {
     }
 
     this.scene.environment = this.environmentMap.texture
+    this.scene.environmentIntensity = 0.45
     // 注意：不再调用 updateBackground()，天空由 DayCycle 的 SkyDome 管理
   }
 

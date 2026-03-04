@@ -169,8 +169,20 @@ export default class Player {
     this.model.traverse((child) => {
       if (child instanceof THREE.Mesh) {
         child.castShadow = true
-        child.material.side = THREE.FrontSide
-        child.material.transparent = true
+        if (child.material) {
+          child.material.side = THREE.FrontSide
+          child.material.transparent = true
+
+          // 设置自发光保证黑夜中可见度
+          if (child.material.map) {
+            child.material.emissiveMap = child.material.map
+            child.material.emissive = new THREE.Color(0xFFFFFF)
+          }
+          else if (child.material.color) {
+            child.material.emissive = child.material.color.clone()
+          }
+          child.material.emissiveIntensity = 0.3
+        }
         // 启用 Layer 1，用于预览相机渲染
         child.layers.enable(1)
       }

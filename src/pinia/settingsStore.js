@@ -42,7 +42,7 @@ const DEFAULT_SETTINGS = {
 
   // Environment
   envSkyMode: 'Image',
-  envSunIntensity: 1.75,
+  envSunIntensity: 1.05,
   envAmbientIntensity: 0.75,
   envFogDensity: 0.01,
 

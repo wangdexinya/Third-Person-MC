@@ -137,7 +137,7 @@ export default class Renderer {
     this.instance.toneMapping = THREE.ACESFilmicToneMapping
     this.instance.toneMappingExposure = 1
     this.instance.shadowMap.enabled = true
-    this.instance.shadowMap.type = THREE.PCFSoftShadowMap
+    this.instance.shadowMap.type = THREE.PCFShadowMap
     this.instance.setClearColor('#000000', 0)
     this.instance.setSize(this.sizes.width, this.sizes.height)
     this.instance.setPixelRatio(this.sizes.pixelRatio)
@@ -483,7 +483,6 @@ export default class Renderer {
     // 恢复状态
     this.instance.setScissorTest(false)
     this.instance.setViewport(0, 0, this.sizes.width * pixelRatio, this.sizes.height * pixelRatio)
-
     this.scene.background = currentSceneBackground
   }
 
