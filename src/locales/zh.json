@@ -73,5 +73,14 @@
   "common": {
     "cancel": "取消",
     "apply": "应用"
+  },
+  "ui": {
+    "achievement": {
+      "suggestion": {
+        "title": "成就获得：怀念童年！",
+        "desc_prefix": "是时候打开真正的 ",
+        "desc_suffix": " 了！"
+      }
+    }
   }
 }

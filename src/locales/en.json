@@ -73,5 +73,14 @@
   "common": {
     "cancel": "Cancel",
     "apply": "Apply"
+  },
+  "ui": {
+    "achievement": {
+      "suggestion": {
+        "title": "Achievement Get: Nostalgic Childhood!",
+        "desc_prefix": "It's time to open the real ",
+        "desc_suffix": "!"
+      }
+    }
   }
 }

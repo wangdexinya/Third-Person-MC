@@ -4,6 +4,7 @@ import Crosshair from '@ui-components/Crosshair.vue'
 import EventMonitorPanel from '@ui-components/debug/EventMonitorPanel.vue'
 import GameHud from '@ui-components/hud/GameHud.vue'
 import UiRoot from '@ui-components/menu/UiRoot.vue'
+import AchievementPopup from '@ui-components/ui/AchievementPopup.vue'
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 
 const threeCanvas = ref(null)
@@ -39,6 +40,9 @@ const isDebugMode = window.location.hash === '#debug'
 
     <!-- Debug 模式：浮动 Event Monitor 面板 -->
     <EventMonitorPanel v-if="isDebugMode" class="event-monitor-overlay overflow-visible" />
+
+    <!-- 成就提示弹窗 (5分钟后提示游玩 MC 原版) -->
+    <AchievementPopup />
   </div>
 </template>
 
