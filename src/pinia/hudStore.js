@@ -313,6 +313,8 @@ export const useHudStore = defineStore('hud', () => {
    */
   function takeDamage(amount) {
     health.value = Math.max(0, health.value - amount)
+    // Emit achievement event when player takes damage
+    emitter.emit('player:take_damage', { amount, currentHealth: health.value })
   }
 
   /**
