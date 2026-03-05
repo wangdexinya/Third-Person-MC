@@ -6,7 +6,6 @@ export default class AchievementController {
     this.store = useAchievementStore()
     this.playTime = 0
     this.hasUnlockedPlayTime = false
-    this.moveCounter = 0
     this.punchCount = 0
     this.cameraSwitchCount = 0
     this.lastCameraSwitchTime = 0
@@ -41,21 +40,17 @@ export default class AchievementController {
     }
     emitter.on('input:update', onInputUpdate)
 
-    // Hiker: 徒步旅行者 - 移动500次
-    const onHikerUpdate = (keys) => {
-      if (this.store.unlocked.hiker) {
-        emitter.off('input:update', onHikerUpdate)
+    // Hiker: 徒步旅行者 - 到达距离原点 chunk(0,0) 3 个 chunk 以上的区域
+    const HIKER_CHUNK_THRESHOLD = 3
+    const onChunkBuilt = ({ chunkX, chunkZ }) => {
+      if (this.store.unlocked.hiker)
         return
-      }
-      if (keys.forward || keys.backward || keys.left || keys.right) {
-        this.moveCounter++
-        if (this.moveCounter > 1000) {
-          this.store.unlock('hiker')
-          emitter.off('input:update', onHikerUpdate)
-        }
+      if (Math.max(Math.abs(chunkX), Math.abs(chunkZ)) >= HIKER_CHUNK_THRESHOLD) {
+        this.store.unlock('hiker')
+        emitter.off('game:chunk-built', onChunkBuilt)
       }
     }
-    emitter.on('input:update', onHikerUpdate)
+    emitter.on('game:chunk-built', onChunkBuilt)
 
     // Rage Quit: 无能狂怒 - 连续挥拳10次不打中任何东西
     const onPunch = () => {

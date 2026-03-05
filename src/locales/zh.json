@@ -88,7 +88,7 @@
       "first_damage_enemy": { "title": "初试锋芒", "desc": "第一次攻击敌人" },
       "first_hurt": { "title": "哎呦！", "desc": "第一次受到伤害" },
       "play_5_mins": { "title": "渐入佳境", "desc": "游玩时间超过 5 分钟" },
-      "hiker": { "title": "徒步旅行者", "desc": "累计持续移动一段时间" },
+      "hiker": { "title": "徒步旅行者", "desc": "探索远离出生点的区域" },
       "rage_quit": { "title": "无能狂怒", "desc": "连续多次挥拳打空气" },
       "who_am_i": { "title": "我是谁我在那", "desc": "短时间内快速切换视角" },
       "first_rear_view": { "title": "回头看", "desc": "首次按Y键回头看" },

@@ -10,6 +10,7 @@ import {
   WATER_PARAMS,
 } from '../../config/chunk-config.js'
 import Experience from '../../experience.js'
+import emitter from '../../utils/event/event-bus.js'
 import IdleQueue from '../../utils/utils/idle-queue.js'
 import BiomeGenerator from './biome-generator.js'
 import { blocks, resources } from './blocks-config.js'
@@ -527,8 +528,11 @@ export default class ChunkManager {
     if (currentChunk?.state === 'init') {
       currentChunk.generator.params.seed = this.seed
       currentChunk.generateData()
-      currentChunk.buildMesh()
+      const built = currentChunk.buildMesh()
       currentChunk.renderer.group.scale.setScalar(this.renderParams.scale)
+      if (built) {
+        emitter.emit('game:chunk-built', { chunkX: pcx, chunkZ: pcz })
+      }
     }
 
     this._updateStats()
@@ -596,6 +600,7 @@ export default class ChunkManager {
         const built = chunk.buildMesh()
         if (built) {
           chunk.renderer.group.scale.setScalar(this.renderParams.scale)
+          emitter.emit('game:chunk-built', { chunkX: chunk.chunkX, chunkZ: chunk.chunkZ })
         }
         this._updateStats()
       }, dist)

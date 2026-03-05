@@ -88,7 +88,7 @@
       "first_damage_enemy": { "title": "Monster Hunter", "desc": "Damaged an enemy." },
       "first_hurt": { "title": "Ouch!", "desc": "Took damage for the first time." },
       "play_5_mins": { "title": "Getting into it", "desc": "Played for 5 minutes." },
-      "hiker": { "title": "Hiker", "desc": "Keep moving for a while." },
+      "hiker": { "title": "Hiker", "desc": "Explore far from the spawn point." },
       "rage_quit": { "title": "Inept", "desc": "Punch the air continuously." },
       "who_am_i": { "title": "Who Am I, Where Am I", "desc": "Rapidly switch camera perspectives." },
       "first_rear_view": { "title": "Look Back", "desc": "Press Y to look back for the first time." },
