@@ -14,6 +14,10 @@ export const ACHIEVEMENTS = [
   { id: 'first_damage_enemy', iconPath: '/img/achievement/first_damage_enemy.png' },
   { id: 'first_hurt', iconPath: '/img/achievement/first_hurt.png' },
   { id: 'play_5_mins', iconPath: '/img/achievement/play_5_mins.png' },
+  { id: 'hiker', iconPath: '/img/achievement/hiker.png' },
+  { id: 'rage_quit', iconPath: '/img/achievement/rage_quit.png' },
+  { id: 'who_am_i', iconPath: '/img/achievement/who_am_i.png' },
+  { id: 'first_rear_view', iconPath: '/img/achievement/look_back.png' },
 ]
 
 export const useAchievementStore = defineStore('achievement', {
