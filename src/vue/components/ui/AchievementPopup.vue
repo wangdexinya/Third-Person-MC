@@ -5,26 +5,18 @@ import { useI18n } from 'vue-i18n'
 
 const { t } = useI18n()
 const isVisible = ref(false)
-let timer = null
-const TEN_SECONDS = 10 * 1000
 
 onMounted(() => {
-  // 当玩家存在时长超过5分钟后显示弹窗
-  timer = window.setTimeout(() => {
-    isVisible.value = true
-  }, TEN_SECONDS)
-
-  // 每隔25秒 弹出一次
-  setInterval(() => {
-    isVisible.value = true
-  }, 25 * 1000)
+  window.addEventListener('achievement:all_unlocked', onAllUnlocked)
 })
 
 onUnmounted(() => {
-  if (timer) {
-    window.clearTimeout(timer)
-  }
+  window.removeEventListener('achievement:all_unlocked', onAllUnlocked)
 })
+
+function onAllUnlocked() {
+  isVisible.value = true
+}
 
 function closePopup() {
   isVisible.value = false
