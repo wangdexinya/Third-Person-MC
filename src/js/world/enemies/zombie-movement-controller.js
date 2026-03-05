@@ -48,6 +48,9 @@ export class ZombieMovementController {
     this._tempCenter = new THREE.Vector3()
     this._tempObstacleDir = new THREE.Vector3()
 
+    // Attack damage amount per hit
+    this.attackDamage = 2
+
     // Pre-allocated player state object (reused every frame)
     this._playerState = {
       basePosition: new THREE.Vector3(),
@@ -71,6 +74,42 @@ export class ZombieMovementController {
       direction.z * horizontalForce,
     )
     this.knockbackTimer = 0.25 // 250ms knockback state
+  }
+
+  /**
+   * 开始一次新的攻击循环：重置冷却、标记、朝向玩家并尝试造成伤害
+   */
+  _beginAttack(directionToPlayer, distanceToPlayer) {
+    this.attackCooldown = 1.0
+    this.hasDealtDamage = false
+
+    // 立即面向玩家
+    if (distanceToPlayer > 0) {
+      const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
+      this.group.rotation.y = angle
+    }
+
+    this._tryAttackPlayer()
+  }
+
+  /**
+   * 尝试对玩家造成伤害（每个攻击循环仅生效一次）
+   */
+  _tryAttackPlayer() {
+    if (this.hasDealtDamage)
+      return
+
+    const player = this.experience.world?.player
+    if (!player)
+      return
+
+    const rot = this.group.rotation.y
+    const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
+    if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
+      const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
+      player.takeDamage(this.attackDamage, knockbackDir)
+    }
+    this.hasDealtDamage = true
   }
 
   update(playerPos, currentState) {
@@ -103,26 +142,7 @@ export class ZombieMovementController {
       if (currentState === ZombieState.IDLE || currentState === ZombieState.WANDER) {
         if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
           newState = ZombieState.ATTACK
-          this.attackCooldown = 1.0
-          this.hasDealtDamage = false // New attack cycle
-
-          // Update rotation immediately before attacking
-          if (distanceToPlayer > 0) {
-            const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
-            this.group.rotation.y = angle
-          }
-
-          // Deal damage immediately on entering ATTACK (using box check)
-          const player = this.experience.world?.player
-          if (player) {
-            const rot = this.group.rotation.y
-            const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
-            if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
-              const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
-              player.takeDamage(2, knockbackDir)
-            }
-          }
-          this.hasDealtDamage = true
+          this._beginAttack(directionToPlayer, distanceToPlayer)
         }
         else if (distanceToPlayer <= this.AGGRO_RANGE && distanceToPlayer > this.ATTACK_RANGE) {
           newState = ZombieState.CHASE
@@ -153,27 +173,7 @@ export class ZombieMovementController {
         }
         else if (distanceToPlayer <= this.ATTACK_RANGE) {
           newState = ZombieState.ATTACK
-          this.attackCooldown = 1.0
-
-          // Update rotation immediately before attacking
-          if (distanceToPlayer > 0) {
-            const angle = Math.atan2(directionToPlayer.x, directionToPlayer.z)
-            this.group.rotation.y = angle
-          }
-
-          // Deal damage once per new attack cycle (using box check)
-          if (!this.hasDealtDamage) {
-            const player = this.experience.world?.player
-            if (player) {
-              const rot = this.group.rotation.y
-              const fwd = { x: Math.sin(rot), z: Math.cos(rot) }
-              if (isInAttackBox(this.position, fwd, player.movement.position, this.attackBoxWidth, this.attackBoxDepth)) {
-                const knockbackDir = calculateKnockbackDir(this.position, player.movement.position)
-                player.takeDamage(2, knockbackDir)
-              }
-            }
-            this.hasDealtDamage = true
-          }
+          this._beginAttack(directionToPlayer, distanceToPlayer)
         }
         else {
           newState = ZombieState.CHASE
@@ -186,7 +186,7 @@ export class ZombieMovementController {
         }
         else if (distanceToPlayer <= this.ATTACK_RANGE && this.attackCooldown <= 0) {
           newState = ZombieState.ATTACK
-          this.attackCooldown = 1.0
+          this._beginAttack(directionToPlayer, distanceToPlayer)
         }
         else {
           newState = ZombieState.CHASE
