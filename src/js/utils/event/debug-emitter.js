@@ -108,7 +108,15 @@ const debugEmitter = {
       debugStateMonitor.logEvent('on', `${eventName} (once)`, null, source)
     }
 
-    return baseEmitter.once(eventName, handler)
+    const wrapper = function (data) {
+      baseEmitter.off(eventName, wrapper)
+      handler(data)
+    }
+
+    // 保存原始引用，以便在取消时识别
+    wrapper._originalHandler = handler
+
+    return baseEmitter.on(eventName, wrapper)
   },
 
   /**
@@ -121,6 +129,18 @@ const debugEmitter = {
     if (isDev) {
       const source = getCallerInfo()
       debugStateMonitor.logEvent('off', eventName, null, source)
+    }
+
+    // 处理被封装的一次性事件函数
+    if (handler) {
+      const handlers = baseEmitter.all.get(eventName)
+      if (handlers) {
+        // 查找是否是被 once 包装的函数
+        const wrappedHandler = handlers.find(h => h._originalHandler === handler)
+        if (wrappedHandler) {
+          return baseEmitter.off(eventName, wrappedHandler)
+        }
+      }
     }
 
     return baseEmitter.off(eventName, handler)

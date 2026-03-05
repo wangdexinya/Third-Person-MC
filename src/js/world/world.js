@@ -6,6 +6,7 @@ import {
 } from '../config/chunk-config.js'
 import { INTERACTION_CONFIG } from '../config/interaction-config.js'
 import Experience from '../experience.js'
+import AchievementController from '../interaction/achievement-controller.js'
 import BlockBreakParticles from '../interaction/block-break-particles.js'
 import BlockInteractionManager from '../interaction/block-interaction-manager.js'
 import BlockMiningController from '../interaction/block-mining-controller.js'
@@ -41,7 +42,12 @@ export default class World {
       this._initEffects()
       this._setupSettingsListeners()
       this._initEnemies()
+      this._initAchievements()
     })
+  }
+
+  _initAchievements() {
+    this.achievementController = new AchievementController()
   }
 
   /** 地形：ChunkManager + 暴露 terrainDataManager + 初始网格 */
@@ -151,6 +157,8 @@ export default class World {
       this.blockBreakParticles.update()
     if (this.fireflies)
       this.fireflies.update()
+    if (this.achievementController)
+      this.achievementController.update(this.experience.time.delta)
   }
 
   /**
@@ -197,6 +205,11 @@ export default class World {
     this.player?.destroy()
     this.enemyManager?.destroy()
     this.chunkManager?.destroy()
+
+    if (this.achievementController && typeof this.achievementController.destroy === 'function') {
+      this.achievementController.destroy()
+    }
+    this.achievementController = null
 
     // Clear terrainDataManager reference
     if (this.experience.terrainDataManager === this.chunkManager) {
