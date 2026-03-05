@@ -19,7 +19,8 @@ export default class InputManager {
       x: false,
       c: false,
       q: false,
-      capslock: false,
+      e: false,
+      tab: false,
       y: false,
     }
 
@@ -73,11 +74,6 @@ export default class InputManager {
     // ESC key - emit ui:escape for menu system
     if (event.key === 'Escape') {
       emitter.emit('ui:escape')
-      return
-    }
-
-    if (key === 'tab') {
-      emitter.emit('input:toggle_camera_side')
       return
     }
 
@@ -144,10 +140,16 @@ export default class InputManager {
         emitter.emit('input:block', isPressed)
         break
       case 'q':
-        if (isPressed && !this.keys.q) {
-          emitter.emit('input:toggle_block_edit_mode')
+        if (this.keys.q !== isPressed) {
+          this.keys.q = isPressed
+          emitter.emit('input:camera_shoulder_left', isPressed)
         }
-        this.keys.q = isPressed
+        break
+      case 'e':
+        if (this.keys.e !== isPressed) {
+          this.keys.e = isPressed
+          emitter.emit('input:camera_shoulder_right', isPressed)
+        }
         break
       case 'r':
         if (isPressed && !this.keys.r) {
@@ -160,9 +162,9 @@ export default class InputManager {
         // 后视镜：持续状态模式（按住生效，松开恢复）
         emitter.emit('input:rear_view', isPressed)
         break
-      case 'capslock':
-        if (this.keys.capslock !== isPressed) {
-          this.keys.capslock = isPressed
+      case 'tab':
+        if (this.keys.tab !== isPressed) {
+          this.keys.tab = isPressed
           emitter.emit('input:telescope', isPressed)
         }
         break

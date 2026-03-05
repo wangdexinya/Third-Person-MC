@@ -75,6 +75,14 @@ export default class TerrainPersistence {
   }
 
   /**
+   * 清除所有修改记录（用于创建新世界时）
+   */
+  clearAll() {
+    this.modifications.clear()
+    this.save()
+  }
+
+  /**
    * 序列化为可保存的格式
    */
   serialize() {

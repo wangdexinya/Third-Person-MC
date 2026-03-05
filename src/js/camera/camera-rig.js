@@ -68,11 +68,11 @@ export default class CameraRig {
     // 初始化时记录偏移量的绝对值，用于切换时的基准
     this._cachedMagnitude = Math.abs(this.config.follow.offset.x)
     // 肩膀模式：'right' | 'left' | 'center'
-    this._shoulderMode = 'right'
+    this._shoulderMode = 'center'
     // 用于控制左右切换的因子 (-1 到 1)，平滑过渡
-    this._sideFactor = 1
+    this._sideFactor = 0
     // 居中拔高因子 (0 = 正常, 1 = 拔高)
-    this._heightBoost = 0
+    this._heightBoost = this.config.centerElevated ? this.config.centerElevated.heightBoost : 0
     // 后视镜因子 (0 = 正常, 1 = 完全镜像)
     this._rearViewFactor = 0
 
@@ -107,6 +107,28 @@ export default class CameraRig {
 
     emitter.on('input:rear_view', (isActive) => {
       this.setRearView(isActive)
+    })
+
+    emitter.on('input:camera_shoulder_left', (isPressed) => {
+      if (isPressed) {
+        if (this._shoulderMode === 'left') {
+          this.setShoulderMode('center')
+        }
+        else {
+          this.setShoulderMode('left')
+        }
+      }
+    })
+
+    emitter.on('input:camera_shoulder_right', (isPressed) => {
+      if (isPressed) {
+        if (this._shoulderMode === 'right') {
+          this.setShoulderMode('center')
+        }
+        else {
+          this.setShoulderMode('right')
+        }
+      }
     })
 
     emitter.on('input:mouse_move', ({ movementY }) => {
@@ -205,19 +227,18 @@ export default class CameraRig {
     }
   }
 
-  toggleSide() {
-    // 三态循环：right → left → center → right
-    const modes = ['right', 'left', 'center']
-    const currentIndex = modes.indexOf(this._shoulderMode)
-    this._shoulderMode = modes[(currentIndex + 1) % modes.length]
+  setShoulderMode(mode) {
+    if (this._shoulderMode === mode)
+      return
+    this._shoulderMode = mode
 
-    const targetSide = this._shoulderMode === 'right'
+    const targetSide = mode === 'right'
       ? 1
-      : this._shoulderMode === 'left'
-        ? -1
+      : mode === 'left'
+        ? -1.25
         : 0
-    const targetHeight = this._shoulderMode === 'center'
-      ? this.config.centerElevated.heightBoost
+    const targetHeight = mode === 'center'
+      ? (this.config.centerElevated ? this.config.centerElevated.heightBoost : 0)
       : 0
 
     // 使用 GSAP 平滑过渡 sideFactor 和 heightBoost

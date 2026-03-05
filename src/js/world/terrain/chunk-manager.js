@@ -150,7 +150,7 @@ export default class ChunkManager {
 
   /**
    * Lightweight world regeneration entry point
-   * @param {object} options - { seed, terrain, trees, water, biome, centerPos, forceSyncCenterChunk }
+   * @param {object} options - { seed, terrain, trees, water, biome, centerPos, forceSyncCenterChunk, clearPersistence }
    */
   regenerateAll({
     seed,
@@ -160,6 +160,7 @@ export default class ChunkManager {
     biome,
     centerPos = { x: this.chunkWidth * 0.5, z: this.chunkWidth * 0.5 },
     forceSyncCenterChunk = true,
+    clearPersistence = true,
   } = {}) {
     // (1) Cancel old queue tasks
     this.idleQueue.clear?.()
@@ -176,6 +177,11 @@ export default class ChunkManager {
 
     // (3) Apply worldgen params
     this.applyWorldGenParams({ terrain, trees, water, biome })
+
+    // (3.5) Clear persistence data since it's a new world
+    if (clearPersistence) {
+      this.persistence.clearAll()
+    }
 
     // (4) Force rebuild all existing chunks
     this._regenerateAllChunks()

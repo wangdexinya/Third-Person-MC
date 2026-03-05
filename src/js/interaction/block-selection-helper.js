@@ -1,7 +1,8 @@
 import * as THREE from 'three'
 
+import selectionFragmentShader from '../../shaders/selection/fragment.glsl'
+import selectionVertexShader from '../../shaders/selection/vertex.glsl'
 import Experience from '../experience.js'
-import emitter from '../utils/event/event-bus.js'
 
 /**
  * BlockSelectionHelper
@@ -17,32 +18,30 @@ export default class BlockSelectionHelper {
     this.params = {
       enabled: options.enabled ?? true,
       visibleThroughWalls: options.visibleThroughWalls ?? false,
-      color: options.color ?? '#bfbfac',
-      opacity: options.opacity ?? 0.3,
+      color: options.color ?? '#000000',
+      opacity: options.opacity ?? 0.8,
+      thickness: options.thickness ?? 0.02,
     }
 
-    // 模式状态：remove | add
-    this.mode = 'remove'
-    this._colors = {
-      remove: new THREE.Color('#ff3333'), // 红色
-      add: new THREE.Color('#33ff33'), // 绿色
-    }
-
-    // 使用几何体：略大于 1 以防止 z-fighting
     this.geometry = new THREE.BoxGeometry(1.01, 1.01, 1.01)
 
-    this.material = new THREE.MeshBasicMaterial({
-      color: this._colors.remove, // 默认红色
+    this.material = new THREE.ShaderMaterial({
+      uniforms: {
+        uColor: { value: new THREE.Color(this.params.color) },
+        uOpacity: { value: this.params.opacity },
+        uThickness: { value: this.params.thickness },
+      },
+      vertexShader: selectionVertexShader,
+      fragmentShader: selectionFragmentShader,
       transparent: true,
-      opacity: this.params.opacity,
       depthTest: !this.params.visibleThroughWalls,
       depthWrite: false,
     })
 
     this.object = new THREE.Mesh(this.geometry, this.material)
-    this.object.visible = false
-    this.object.frustumCulled = false
     this.object.renderOrder = 0
+
+    this.object.visible = false
     this.scene.add(this.object)
 
     // 移除旧的事件监听 (改为 update 轮询)
@@ -56,14 +55,6 @@ export default class BlockSelectionHelper {
       this.clear()
     })
     */
-
-    // 监听编辑模式切换
-    emitter.on('game:block_edit_mode_changed', ({ mode }) => {
-      this.mode = mode
-      const color = this._colors[mode] || this._colors.remove
-      this.material.color.copy(color)
-      // 如果需要，可在此更新当前高亮位置（如果当前正选中方块）
-    })
 
     if (this.debug.active) {
       this.debugInit()
@@ -99,23 +90,8 @@ export default class BlockSelectionHelper {
     const s = info.renderScale ?? 1
     this.object.scale.setScalar(s)
 
-    // add 模式：基于 face.normal 预览相邻格子
-    if (this.mode === 'add' && info.face?.normal) {
-      const normal = info.face.normal
-      // console.log(normal)
-      // 注意高度可能有缩放
-      const hScale = info.heightScale ?? 1
-
-      this.object.position.set(
-        info.worldPosition.x + normal.x * s,
-        info.worldPosition.y + normal.y * s * hScale,
-        info.worldPosition.z + normal.z * s,
-      )
-    }
-    // remove 模式（或无 face）：高亮命中方块本身
-    else {
-      this.object.position.copy(info.worldPosition)
-    }
+    // 永远高亮命中方块本身
+    this.object.position.copy(info.worldPosition)
 
     this.object.visible = true
   }
@@ -151,20 +127,29 @@ export default class BlockSelectionHelper {
       max: 1,
       step: 0.05,
     }).on('change', () => {
-      this.material.opacity = this.params.opacity
+      this.material.uniforms.uOpacity.value = this.params.opacity
+    })
+
+    this.debugFolder.addBinding(this.params, 'thickness', {
+      label: '边框厚度',
+      min: 0.01,
+      max: 0.2,
+      step: 0.01,
+    }).on('change', () => {
+      this.material.uniforms.uThickness.value = this.params.thickness
     })
 
     this.debugFolder.addBinding(this.params, 'color', {
       label: '颜色',
       view: 'color',
     }).on('change', () => {
-      this.material.color.set(this.params.color)
+      this.material.uniforms.uColor.value.set(this.params.color)
     })
   }
 
   dispose() {
     this.scene.remove(this.object)
-    this.object.geometry?.dispose?.()
+    this.geometry?.dispose?.()
     this.material?.dispose?.()
   }
 }

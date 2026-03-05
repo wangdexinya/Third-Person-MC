@@ -1,4 +1,3 @@
-import { INTERACTION_CONFIG } from '../config/interaction-config.js'
 import Experience from '../experience.js'
 import emitter from '../utils/event/event-bus.js'
 
@@ -19,7 +18,7 @@ export default class BlockInteractionManager {
     this.miningController = options.blockMiningController
 
     // State
-    this.mode = INTERACTION_CONFIG.modes.REMOVE // 'remove' | 'add'
+    this._lastPlaceTime = 0
 
     // Hotbar state (synced via events from hudStore)
     this._selectedBlockId = null
@@ -27,15 +26,13 @@ export default class BlockInteractionManager {
     emitter.on('hud:selected-block-update', this._onHotbarUpdate)
 
     // Bindings
-    this._onToggleMode = this._onToggleMode.bind(this)
     this._onMouseDown = this._onMouseDown.bind(this)
 
     // Listeners
-    emitter.on('input:toggle_block_edit_mode', this._onToggleMode)
     emitter.on('input:mouse_down', this._onMouseDown)
 
-    // Initialize state (Default to Remove/Mining mode)
-    this._updateMode()
+    // Request current selected block from hudStore
+    emitter.emit('hud:request-selected-block')
   }
 
   /**
@@ -45,39 +42,14 @@ export default class BlockInteractionManager {
     this._selectedBlockId = blockId
   }
 
-  _onToggleMode() {
-    this.mode = this.mode === INTERACTION_CONFIG.modes.REMOVE ? INTERACTION_CONFIG.modes.ADD : INTERACTION_CONFIG.modes.REMOVE
-    this._updateMode()
-  }
-
-  _updateMode() {
-    // 1. Notify UI / Visual Helpers
-    emitter.emit('game:block_edit_mode_changed', { mode: this.mode })
-
-    // 2. Configure Mining Controller
-    if (this.miningController) {
-      if (this.mode === INTERACTION_CONFIG.modes.REMOVE) {
-        this.miningController.params.enabled = true
-      }
-      else {
-        this.miningController.params.enabled = false
-        // Ensure any active mining is cancelled
-        this.miningController._resetMining()
-        emitter.emit('game:mining-cancel')
-      }
-    }
-
-    // 3. Request current selected block from hudStore
-    emitter.emit('hud:request-selected-block')
-  }
-
   _onMouseDown(event) {
-    // Left click (0) only
-    if (event.button !== 0)
+    // Right click (2) only for placing
+    if (event.button !== 2)
       return
 
-    // Ignore if not in ADD mode
-    if (this.mode !== INTERACTION_CONFIG.modes.ADD)
+    // Cooldown check (200ms)
+    const now = performance.now()
+    if (now - this._lastPlaceTime < 200)
       return
 
     // Ensure we have a valid target
@@ -114,6 +86,7 @@ export default class BlockInteractionManager {
     // Check availability (optional: collision check with player?)
     // For now, just place it
     if (this.chunkManager) {
+      this._lastPlaceTime = performance.now()
       this.chunkManager.addBlockWorld(targetX, targetY, targetZ, blockToPlace)
 
       // Consume one item from Hotbar
@@ -125,7 +98,6 @@ export default class BlockInteractionManager {
   }
 
   destroy() {
-    emitter.off('input:toggle_block_edit_mode', this._onToggleMode)
     emitter.off('input:mouse_down', this._onMouseDown)
     emitter.off('hud:selected-block-update', this._onHotbarUpdate)
   }
