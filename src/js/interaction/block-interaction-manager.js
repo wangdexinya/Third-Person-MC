@@ -94,6 +94,9 @@ export default class BlockInteractionManager {
 
       // Emit placement sound/event
       emitter.emit('game:block-place', { x: targetX, y: targetY, z: targetZ })
+
+      // Emit achievement event
+      emitter.emit('player:block_place', { x: targetX, y: targetY, z: targetZ })
     }
   }
 

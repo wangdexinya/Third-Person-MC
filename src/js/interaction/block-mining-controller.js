@@ -134,6 +134,12 @@ export default class BlockMiningController {
       worldPos: { x: worldBlock.x, y: worldBlock.y, z: worldBlock.z },
     })
 
+    // Emit achievement event
+    emitter.emit('player:block_break', {
+      blockId,
+      worldPos: { x: worldBlock.x, y: worldBlock.y, z: worldBlock.z },
+    })
+
     emitter.emit('game:mining-complete', {
       target: this.currentTarget,
     })
