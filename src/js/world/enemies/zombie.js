@@ -1,6 +1,7 @@
 import * as THREE from 'three'
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js'
 import Experience from '../../experience.js'
+import emitter from '../../utils/event/event-bus.js'
 import { ZombieAnimationController } from './zombie-animation.js'
 import { ZombieMovementController } from './zombie-movement-controller.js'
 
@@ -112,6 +113,9 @@ export default class Zombie {
     if (this.isDead)
       return
     this.isDead = true
+
+    // Emit achievement event when zombie dies (player killed it)
+    emitter.emit('player:damage_enemy')
 
     // Stop movement
     if (this.movement) {
