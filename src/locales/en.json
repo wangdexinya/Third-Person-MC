@@ -76,6 +76,21 @@
   },
   "ui": {
     "achievement": {
+      "first_world": { "title": "Welcome to New World", "desc": "Created your first world." },
+      "first_punch": { "title": "First Strike", "desc": "Punched for the first time." },
+      "first_run": { "title": "Feel the Wind", "desc": "Ran for the first time." },
+      "first_jump": { "title": "Taking Off", "desc": "Jumped for the first time." },
+      "first_zoom": { "title": "Looking Closely", "desc": "Zoomed in using telescope." },
+      "first_perspective": { "title": "New Perspective", "desc": "Changed camera perspective." },
+      "first_chat": { "title": "Hello World", "desc": "Opened the chat for the first time." },
+      "first_mine": { "title": "Resource Gathering", "desc": "Mined your first block." },
+      "first_place": { "title": "Building Block", "desc": "Placed your first block." },
+      "first_damage_enemy": { "title": "Monster Hunter", "desc": "Damaged an enemy." },
+      "first_hurt": { "title": "Ouch!", "desc": "Took damage for the first time." },
+      "play_5_mins": { "title": "Getting into it", "desc": "Played for 5 minutes." },
+      "menuTitle": "Achievements",
+      "unlocked": "Unlocked",
+      "locked": "Locked",
       "suggestion": {
         "title": "Achievement Get: Nostalgic Childhood!",
         "desc_prefix": "It's time to open the real ",

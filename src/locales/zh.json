@@ -76,6 +76,21 @@
   },
   "ui": {
     "achievement": {
+      "first_world": { "title": "欢迎来到新世界", "desc": "第一次创建世界" },
+      "first_punch": { "title": "初试风采", "desc": "第一次挥拳" },
+      "first_run": { "title": "感受风的速度", "desc": "第一次奔跑" },
+      "first_jump": { "title": "一跃而起", "desc": "第一次跳跃" },
+      "first_zoom": { "title": "观察入微", "desc": "使用望远镜放大" },
+      "first_perspective": { "title": "换个角度", "desc": "切换摄像机视角" },
+      "first_chat": { "title": "尝试沟通", "desc": "第一次打开聊天框" },
+      "first_mine": { "title": "第一手资源", "desc": "第一次破坏方块" },
+      "first_place": { "title": "添砖加瓦", "desc": "第一次放置方块" },
+      "first_damage_enemy": { "title": "初试锋芒", "desc": "第一次攻击敌人" },
+      "first_hurt": { "title": "哎呦！", "desc": "第一次受到伤害" },
+      "play_5_mins": { "title": "渐入佳境", "desc": "游玩时间超过 5 分钟" },
+      "menuTitle": "成就系统",
+      "unlocked": "已解锁",
+      "locked": "未解锁",
       "suggestion": {
         "title": "成就获得：怀念童年！",
         "desc_prefix": "是时候打开真正的 ",
