@@ -3,17 +3,18 @@
  * PauseMenu - ESC menu when game is paused
  */
 import { useUiStore } from '@pinia/uiStore.js'
+import AchievementMenu from './AchievementMenu.vue'
 
 const ui = useUiStore()
 </script>
 
 <template>
   <div class="pause-menu">
-    <h2 class="menu-title">
+    <h2 v-if="ui.mainMenuView === 'root'" class="menu-title">
       {{ $t('menu.paused') }}
     </h2>
 
-    <div class="mc-menu">
+    <div v-if="ui.mainMenuView === 'root'" class="mc-menu">
       <button class="mc-button" @click="ui.toPlaying()">
         <span class="title">{{ $t('menu.resume') }}</span>
       </button>
@@ -23,9 +24,16 @@ const ui = useUiStore()
       <button class="mc-button" @click="ui.toSettings('pauseMenu')">
         <span class="title">{{ $t('menu.settings') }}</span>
       </button>
+      <button class="mc-button" @click="ui.toAchievements()">
+        <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
+      </button>
       <button class="mc-button" @click="ui.toSkinSelector()">
         <span class="title">{{ $t('menu.skins') }}</span>
       </button>
+    </div>
+
+    <div v-else-if="ui.mainMenuView === 'achievements'">
+       <AchievementMenu />
     </div>
   </div>
 </template>

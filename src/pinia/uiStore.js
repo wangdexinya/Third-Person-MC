@@ -11,6 +11,7 @@ import {
   DEFAULT_WORLDGEN_DRAFT,
   WORLDGEN_PRESETS,
 } from '../js/config/worldgen-presets.js'
+import { useAchievementStore } from './achievementStore.js'
 
 // ========================================
 // Constants
@@ -31,7 +32,7 @@ export const useUiStore = defineStore('ui', () => {
   /** Current screen: 'loading' | 'mainMenu' | 'playing' | 'pauseMenu' | 'settings' */
   const screen = ref('loading')
 
-  /** Main menu sub-view: 'root' | 'worldSetup' | 'howToPlay' | 'skinSelector' */
+  /** Main menu sub-view: 'root' | 'worldSetup' | 'howToPlay' | 'skinSelector' | 'achievements' */
   const mainMenuView = ref('root')
 
   /** Whether a new world creation is pending (for overwrite confirmation) */
@@ -161,6 +162,7 @@ export const useUiStore = defineStore('ui', () => {
    */
   function toPlaying() {
     screen.value = 'playing'
+    mainMenuView.value = 'root'
     isPaused.value = false
     emitter.emit('ui:pause-changed', false)
     emitter.emit('game:request_pointer_lock')
@@ -171,6 +173,7 @@ export const useUiStore = defineStore('ui', () => {
    */
   function toPauseMenu() {
     screen.value = 'pauseMenu'
+    mainMenuView.value = 'root'
     isPaused.value = true
     emitter.emit('ui:pause-changed', true)
   }
@@ -262,6 +265,25 @@ export const useUiStore = defineStore('ui', () => {
     }
   }
 
+  /**
+   * Enter Achievements view
+   */
+  function toAchievements() {
+    mainMenuView.value = 'achievements'
+  }
+
+  /**
+   * Exit Achievements back to previous view
+   */
+  function exitAchievements() {
+    if (screen.value === 'pauseMenu') {
+      mainMenuView.value = 'root'
+    }
+    else {
+      backToMainRoot()
+    }
+  }
+
   // ----------------------------------------
   // Actions: WorldGen Draft
   // ----------------------------------------
@@ -309,6 +331,9 @@ export const useUiStore = defineStore('ui', () => {
    * @param {number} seed
    */
   function createWorld(seed) {
+    const achievementStore = useAchievementStore()
+    achievementStore.reset()
+
     world.value = {
       hasWorld: true,
       seed: String(seed),
@@ -333,6 +358,9 @@ export const useUiStore = defineStore('ui', () => {
    * @param {number} seed
    */
   function resetWorld(seed) {
+    const achievementStore = useAchievementStore()
+    achievementStore.reset()
+
     world.value = {
       hasWorld: true,
       seed: String(seed),
@@ -380,8 +408,11 @@ export const useUiStore = defineStore('ui', () => {
         break
       case 'mainMenu':
         // 在 mainMenu 的子视图中（worldSetup/howToPlay/skinSelector）统一返回 root
-        if (mainMenuView.value !== 'root')
-          backToMainRoot()
+        if (mainMenuView.value !== 'root') {
+          if (mainMenuView.value === 'achievements')
+            exitAchievements()
+          else backToMainRoot()
+        }
         break
       // 'loading', 'mainMenu' - ignore ESC
     }
@@ -427,6 +458,8 @@ export const useUiStore = defineStore('ui', () => {
     exitHowToPlay,
     toSkinSelector,
     exitSkinSelector,
+    toAchievements,
+    exitAchievements,
 
     // WorldGen
     applyWorldGenPreset,

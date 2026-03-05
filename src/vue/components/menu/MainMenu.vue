@@ -8,6 +8,7 @@ import { WORLDGEN_PRESET_IDS, WORLDGEN_PRESETS } from '@three/config/worldgen-pr
  */
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import AchievementMenu from './AchievementMenu.vue'
 import McStepSlider from './ui/McStepSlider.vue'
 
 const ui = useUiStore()
@@ -107,12 +108,17 @@ function cancelOverwrite() {
         <button class="mc-button" @click="ui.toSettings('mainMenu')">
           <span class="title">{{ $t('menu.settings') }}</span>
         </button>
-        <button class="mc-button" @click="ui.toHowToPlay()">
-          <span class="title">{{ $t('menu.howToPlay') }}</span>
+        <button class="mc-button" @click="ui.toAchievements()">
+          <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
         </button>
-        <button class="mc-button" @click="ui.toSkinSelector()">
-          <span class="title">{{ $t('menu.skins') }}</span>
-        </button>
+        <div class="mc-menu double">
+          <button class="mc-button half" @click="ui.toHowToPlay()">
+            <span class="title">{{ $t('menu.howToPlay') }}</span>
+          </button>
+          <button class="mc-button half" @click="ui.toSkinSelector()">
+            <span class="title">{{ $t('menu.skins') }}</span>
+          </button>
+        </div>
       </template>
 
       <!-- World exists -->
@@ -125,6 +131,9 @@ function cancelOverwrite() {
         </button>
         <button class="mc-button" @click="ui.toSettings('mainMenu')">
           <span class="title">{{ $t('menu.settings') }}</span>
+        </button>
+        <button class="mc-button" @click="ui.toAchievements()">
+          <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
         </button>
         <div class="mc-menu double">
           <button class="mc-button half" @click="ui.toHowToPlay()">
@@ -263,6 +272,11 @@ function cancelOverwrite() {
       <button class="mc-button" @click="ui.backToMainRoot()">
         <span class="title">{{ $t('menu.back') }}</span>
       </button>
+    </div>
+
+    <!-- Achievement View -->
+    <div v-else-if="ui.mainMenuView === 'achievements'">
+      <AchievementMenu />
     </div>
 
     <!-- Overwrite Confirmation Dialog -->

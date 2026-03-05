@@ -7,6 +7,8 @@ import emitter from '@three/utils/event/event-bus.js'
  * Only visible when screen === 'playing'
  */
 import { onMounted, onUnmounted } from 'vue'
+import AchievementPopup from '../ui/AchievementPopup.vue'
+import AchievementToast from './AchievementToast.vue'
 import ChatBox from './ChatBox.vue'
 import ExperienceBar from './ExperienceBar.vue'
 import HealthBar from './HealthBar.vue'
@@ -87,5 +89,8 @@ onUnmounted(() => {
 
     <!-- Player Preview -->
     <PlayerPreview />
+
+    <AchievementToast />
+    <AchievementPopup />
   </div>
 </template>
