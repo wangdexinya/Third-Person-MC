@@ -22,17 +22,18 @@ export default class ChunkManager {
     this.experience = new Experience()
     this.debug = this.experience.debug
 
-    // 基础配置：使用配置常量作为默认值，options 可覆盖
-    this.chunkWidth = options.chunkWidth ?? CHUNK_BASIC_CONFIG.chunkWidth
-    this.chunkHeight = options.chunkHeight ?? CHUNK_BASIC_CONFIG.chunkHeight
-    this.viewDistance = options.viewDistance ?? CHUNK_BASIC_CONFIG.viewDistance
-    this.unloadPadding = options.unloadPadding ?? CHUNK_BASIC_CONFIG.unloadPadding
-    this.seed = options.seed ?? CHUNK_BASIC_CONFIG.seed
+    // 静态配置：仅从 chunk-config 读取，不再接受 options 覆盖
+    this.chunkWidth = CHUNK_BASIC_CONFIG.chunkWidth
+    this.chunkHeight = CHUNK_BASIC_CONFIG.chunkHeight
+    this.viewDistance = CHUNK_BASIC_CONFIG.viewDistance
+    this.unloadPadding = CHUNK_BASIC_CONFIG.unloadPadding
 
-    this.terrainParams = options.terrain || { ...TERRAIN_PARAMS }
-    this.treeParams = options.trees || { ...TREE_PARAMS }
+    // 运行时参数：仅 seed、terrain、trees 等由 options 传入
+    this.seed = options.seed ?? CHUNK_BASIC_CONFIG.seed
+    this.terrainParams = options.terrain ? { ...TERRAIN_PARAMS, ...options.terrain } : { ...TERRAIN_PARAMS }
+    this.treeParams = options.trees ? { ...TREE_PARAMS, ...options.trees } : { ...TREE_PARAMS }
     this.renderParams = { ...RENDER_PARAMS }
-    this.waterParams = options.water || { ...WATER_PARAMS }
+    this.waterParams = options.water ? { ...WATER_PARAMS, ...options.water } : { ...WATER_PARAMS }
     this.biomeParams = {
       biomeSource: options.biomeSource ?? 'generator',
       forcedBiome: options.forcedBiome ?? 'plains',
