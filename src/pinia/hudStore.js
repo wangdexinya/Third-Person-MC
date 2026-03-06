@@ -1,8 +1,8 @@
-import emitter from '@three/utils/event/event-bus.js'
 /**
  * HUD Store - Minecraft Style HUD State Management
  * Manages health, hunger, experience, hotbar, position, and chat messages
  */
+import emitter from '@three/utils/event/event-bus.js'
 import { defineStore } from 'pinia'
 import { reactive, ref } from 'vue'
 
@@ -38,17 +38,7 @@ export const useHudStore = defineStore('hud', () => {
    * Hotbar items (9 slots)
    * Each slot: { blockId: number, count: number } | null
    */
-  const hotbarItems = ref([
-    { blockId: 2, count: 30 }, // Initial: 30 dirt blocks
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-    null,
-  ])
+  const hotbarItems = ref(Array.from({ length: 9 }, () => null))
 
   // ========================================
   // Player Position & Facing
@@ -222,12 +212,7 @@ export const useHudStore = defineStore('hud', () => {
    * @param {number} delta - +1 or -1
    */
   function cycleSlot(delta) {
-    let newSlot = selectedSlot.value + delta
-    if (newSlot < 0)
-      newSlot = 8
-    if (newSlot > 8)
-      newSlot = 0
-    selectedSlot.value = newSlot
+    selectedSlot.value = (selectedSlot.value + delta + 9) % 9
     // Notify Three.js interaction manager of the new selected block
     emitter.emit('hud:selected-block-update', { blockId: getSelectedBlockId() })
   }
@@ -252,8 +237,9 @@ export const useHudStore = defineStore('hud', () => {
     // 2. Find empty slots for remaining
     for (let i = 0; i < 9; i++) {
       if (!hotbarItems.value[i] && amount > 0) {
-        hotbarItems.value[i] = { blockId, count: Math.min(amount, MAX_STACK) }
-        amount -= MAX_STACK
+        const added = Math.min(amount, MAX_STACK)
+        hotbarItems.value[i] = { blockId, count: added }
+        amount -= added
         if (amount <= 0)
           return true
       }
