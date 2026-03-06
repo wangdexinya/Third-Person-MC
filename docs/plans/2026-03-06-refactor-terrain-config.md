@@ -334,5 +334,5 @@ git commit -m "docs(config): add chunk-config responsibility comment"
 - [x] world.js 从 settingsStore 注入 viewDistance/unloadPadding
 - [x] uiStore worldGenDraft.viewDistance 来自 CHUNK_DEFAULTS
 - [x] settings-presets 不再重复定义 CHUNK_DEFAULTS
-- [ ] pnpm lint 通过
-- [ ] pnpm dev 手动验证通过
+- [x] pnpm lint 通过
+- [x] pnpm dev 手动验证通过
