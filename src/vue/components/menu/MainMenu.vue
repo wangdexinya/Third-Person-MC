@@ -1,11 +1,11 @@
 <script setup>
-import { useSettingsStore } from '@pinia/settingsStore.js'
-import { useUiStore } from '@pinia/uiStore.js'
-import { WORLDGEN_PRESET_IDS, WORLDGEN_PRESETS } from '@three/config/worldgen-presets.js'
 /**
  * MainMenu - Main menu with Root and WorldSetup views
  * Includes Advanced panel for WorldGen settings
  */
+import { useSettingsStore } from '@pinia/settingsStore.js'
+import { useUiStore } from '@pinia/uiStore.js'
+import { WORLDGEN_PRESET_IDS, WORLDGEN_PRESETS } from '@three/config/worldgen-presets.js'
 import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import AchievementMenu from './AchievementMenu.vue'
@@ -13,7 +13,7 @@ import McStepSlider from './ui/McStepSlider.vue'
 
 const ui = useUiStore()
 const settings = useSettingsStore()
-const { locale } = useI18n()
+const { locale, t } = useI18n()
 
 // Toggle Language
 function toggleLanguage() {
@@ -41,7 +41,13 @@ const randomTagline = ref(taglines[Math.floor(Math.random() * taglines.length)])
 
 // Handle Create World button
 function handleCreate() {
-  // Validate seed
+  // Validate seed - required
+  const trimmed = ui.seedDraft.trim()
+  if (trimmed === '') {
+    ui.seedError = t('menu.seedRequired')
+    return
+  }
+  // Validate seed - numeric only
   if (!ui.isSeedValidNumeric()) {
     ui.seedError = 'Seed must be numeric only'
     return
@@ -100,28 +106,11 @@ function cancelOverwrite() {
 
     <!-- Root View -->
     <div v-if="ui.mainMenuView === 'root'" class="mc-menu">
-      <!-- No world exists -->
       <template v-if="!ui.world.hasWorld">
         <button class="mc-button" @click="ui.enterWorldSetup({ mode: 'create' })">
           <span class="title">{{ $t('menu.createWorld') }}</span>
         </button>
-        <button class="mc-button" @click="ui.toSettings('mainMenu')">
-          <span class="title">{{ $t('menu.settings') }}</span>
-        </button>
-        <button class="mc-button" @click="ui.toAchievements()">
-          <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
-        </button>
-        <div class="mc-menu double">
-          <button class="mc-button half" @click="ui.toHowToPlay()">
-            <span class="title">{{ $t('menu.howToPlay') }}</span>
-          </button>
-          <button class="mc-button half" @click="ui.toSkinSelector()">
-            <span class="title">{{ $t('menu.skins') }}</span>
-          </button>
-        </div>
       </template>
-
-      <!-- World exists -->
       <template v-else>
         <button class="mc-button" @click="ui.continueWorld()">
           <span class="title">{{ $t('menu.continue') }}</span>
@@ -129,21 +118,21 @@ function cancelOverwrite() {
         <button class="mc-button" @click="ui.enterWorldSetup({ mode: 'newWorld' })">
           <span class="title">{{ $t('menu.newWorld') }}</span>
         </button>
-        <button class="mc-button" @click="ui.toSettings('mainMenu')">
-          <span class="title">{{ $t('menu.settings') }}</span>
-        </button>
-        <button class="mc-button" @click="ui.toAchievements()">
-          <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
-        </button>
-        <div class="mc-menu double">
-          <button class="mc-button half" @click="ui.toHowToPlay()">
-            <span class="title">{{ $t('menu.howToPlay') }}</span>
-          </button>
-          <button class="mc-button half" @click="ui.toSkinSelector()">
-            <span class="title">{{ $t('menu.skins') }}</span>
-          </button>
-        </div>
       </template>
+      <button class="mc-button" @click="ui.toSettings('mainMenu')">
+        <span class="title">{{ $t('menu.settings') }}</span>
+      </button>
+      <button class="mc-button" @click="ui.toAchievements()">
+        <span class="title">{{ $t('ui.achievement.menuTitle') }}</span>
+      </button>
+      <div class="mc-menu double">
+        <button class="mc-button half" @click="ui.toHowToPlay()">
+          <span class="title">{{ $t('menu.howToPlay') }}</span>
+        </button>
+        <button class="mc-button half" @click="ui.toSkinSelector()">
+          <span class="title">{{ $t('menu.skins') }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- World Setup View -->
@@ -171,13 +160,13 @@ function cancelOverwrite() {
 
       <!-- Fixed Notice -->
       <div class="notice-bar">
-        <span class="notice-icon  mc-text">🛈</span>
-        <span class="  mc-text">Advanced settings only affect new worlds</span>
+        <span class="notice-icon mc-text">🛈</span>
+        <span class="mc-text">Advanced settings only affect new worlds</span>
       </div>
 
       <!-- Advanced Collapsible -->
       <button class="mc-button advanced-toggle" @click="ui.toggleAdvanced()">
-        <span class="title mc-text " style="font-size: 25px;">
+        <span class="title mc-text" style="font-size: 25px;">
           {{ $t('menu.advanced') }} {{ ui.advancedExpanded ? '▾' : '▸' }}
         </span>
       </button>
@@ -187,7 +176,7 @@ function cancelOverwrite() {
         <!-- Warning -->
         <div class="warning-bar">
           <span class="warning-icon mc-text">⚠</span>
-          <span class=" mc-text">Changes here only apply when creating a new world</span>
+          <span class="mc-text">Changes here only apply when creating a new world</span>
         </div>
 
         <!-- World Type Preset -->

@@ -1,9 +1,5 @@
 import { useSettingsStore } from '@pinia/settingsStore.js'
 import emitter from '@three/utils/event/event-bus.js'
-/**
- * UI Store - Menu System State Machine
- * Manages screen states, menu views, and world state
- */
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
 import {
@@ -12,6 +8,11 @@ import {
   WORLDGEN_PRESETS,
 } from '../js/config/worldgen-presets.js'
 import { useAchievementStore } from './achievementStore.js'
+
+/**
+ * UI Store - Menu System State Machine
+ * Manages screen states, menu views, and world state
+ */
 
 // ========================================
 // Constants
@@ -62,7 +63,7 @@ export const useUiStore = defineStore('ui', () => {
     magnitude: DEFAULT_WORLDGEN_DRAFT.magnitude,
     treeMinHeight: DEFAULT_WORLDGEN_DRAFT.treeMinHeight,
     treeMaxHeight: DEFAULT_WORLDGEN_DRAFT.treeMaxHeight,
-    viewDistance: 2,
+    viewDistance: 1,
   })
 
   /** Whether Advanced panel is expanded */
@@ -90,7 +91,7 @@ export const useUiStore = defineStore('ui', () => {
 
   /**
    * Check if seed draft is valid (empty or numeric only)
-   * @returns {boolean}
+   * @returns {boolean} True if empty or numeric only
    */
   function isSeedValidNumeric() {
     const trimmed = seedDraft.value.trim()
@@ -105,7 +106,7 @@ export const useUiStore = defineStore('ui', () => {
    * Get or create seed number
    * - If seedDraft is empty, generate random
    * - If seedDraft is valid, parse to number
-   * @returns {number}
+   * @returns {number} Seed value (random or parsed)
    */
   function getOrCreateSeedNumber() {
     const trimmed = seedDraft.value.trim()
@@ -191,12 +192,7 @@ export const useUiStore = defineStore('ui', () => {
    * Return from Settings to previous screen
    */
   function exitSettings() {
-    if (returnTo.value === 'pauseMenu') {
-      screen.value = 'pauseMenu'
-    }
-    else {
-      screen.value = 'mainMenu'
-    }
+    screen.value = returnTo.value === 'pauseMenu' ? 'pauseMenu' : 'mainMenu'
     returnTo.value = null
   }
 
@@ -253,16 +249,20 @@ export const useUiStore = defineStore('ui', () => {
   }
 
   /**
+   * Exit sub-view (skin selector, achievements, etc.) back to previous screen
+   */
+  function exitSubView() {
+    if (screen.value === 'pauseMenu')
+      mainMenuView.value = 'root'
+    else
+      backToMainRoot()
+  }
+
+  /**
    * Exit Skin Selector back to previous view
    */
   function exitSkinSelector() {
-    if (screen.value === 'pauseMenu') {
-      // 从暂停菜单进入，返回暂停菜单
-      mainMenuView.value = 'root'
-    }
-    else {
-      backToMainRoot()
-    }
+    exitSubView()
   }
 
   /**
@@ -276,12 +276,7 @@ export const useUiStore = defineStore('ui', () => {
    * Exit Achievements back to previous view
    */
   function exitAchievements() {
-    if (screen.value === 'pauseMenu') {
-      mainMenuView.value = 'root'
-    }
-    else {
-      backToMainRoot()
-    }
+    exitSubView()
   }
 
   // ----------------------------------------
@@ -301,7 +296,6 @@ export const useUiStore = defineStore('ui', () => {
     worldGenDraft.magnitude = preset.terrain.magnitude
     worldGenDraft.treeMinHeight = preset.trees.minHeight
     worldGenDraft.treeMaxHeight = preset.trees.maxHeight
-    // Keep current viewDistance or reset to 2? Let's keep it manual or default 2
   }
 
   /**
@@ -327,30 +321,35 @@ export const useUiStore = defineStore('ui', () => {
   // ----------------------------------------
 
   /**
-   * Create world (first time or after confirmation)
+   * Shared logic for create/reset world
    * @param {number} seed
+   * @param {'game:create_world' | 'game:reset_world'} eventName
    */
-  function createWorld(seed) {
+  function _applyWorldAndStart(seed, eventName) {
     const achievementStore = useAchievementStore()
     achievementStore.reset()
 
-    world.value = {
-      hasWorld: true,
-      seed: String(seed),
-    }
+    world.value = { hasWorld: true, seed: String(seed) }
+    if (eventName === 'game:reset_world')
+      pendingNewWorld.value = false
 
-    // Build terrain/trees params from draft
     const { terrain, trees } = buildWorldGenParams(worldGenDraft.presetId, {
       magnitude: worldGenDraft.magnitude,
       treeMinHeight: worldGenDraft.treeMinHeight,
       treeMaxHeight: worldGenDraft.treeMaxHeight,
     })
-
-    // Apply view distance
     settingsStore.setChunkViewDistance(worldGenDraft.viewDistance)
 
     toPlaying()
-    emitter.emit('game:create_world', { seed, terrain, trees })
+    emitter.emit(eventName, { seed, terrain, trees })
+  }
+
+  /**
+   * Create world (first time or after confirmation)
+   * @param {number} seed
+   */
+  function createWorld(seed) {
+    _applyWorldAndStart(seed, 'game:create_world')
   }
 
   /**
@@ -358,27 +357,7 @@ export const useUiStore = defineStore('ui', () => {
    * @param {number} seed
    */
   function resetWorld(seed) {
-    const achievementStore = useAchievementStore()
-    achievementStore.reset()
-
-    world.value = {
-      hasWorld: true,
-      seed: String(seed),
-    }
-    pendingNewWorld.value = false
-
-    // Build terrain/trees params from draft
-    const { terrain, trees } = buildWorldGenParams(worldGenDraft.presetId, {
-      magnitude: worldGenDraft.magnitude,
-      treeMinHeight: worldGenDraft.treeMinHeight,
-      treeMaxHeight: worldGenDraft.treeMaxHeight,
-    })
-
-    // Apply view distance
-    settingsStore.setChunkViewDistance(worldGenDraft.viewDistance)
-
-    toPlaying()
-    emitter.emit('game:reset_world', { seed, terrain, trees })
+    _applyWorldAndStart(seed, 'game:reset_world')
   }
 
   /**
@@ -407,12 +386,8 @@ export const useUiStore = defineStore('ui', () => {
         toPauseMenu()
         break
       case 'mainMenu':
-        // 在 mainMenu 的子视图中（worldSetup/howToPlay/skinSelector）统一返回 root
-        if (mainMenuView.value !== 'root') {
-          if (mainMenuView.value === 'achievements')
-            exitAchievements()
-          else backToMainRoot()
-        }
+        if (mainMenuView.value !== 'root')
+          backToMainRoot()
         break
       // 'loading', 'mainMenu' - ignore ESC
     }
