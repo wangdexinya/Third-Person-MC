@@ -2,6 +2,7 @@ import { useSettingsStore } from '@pinia/settingsStore.js'
 import emitter from '@three/utils/event/event-bus.js'
 import { defineStore } from 'pinia'
 import { computed, reactive, ref } from 'vue'
+import { CHUNK_DEFAULTS } from '../js/config/chunk-config.js'
 import {
   buildWorldGenParams,
   DEFAULT_WORLDGEN_DRAFT,
@@ -63,7 +64,7 @@ export const useUiStore = defineStore('ui', () => {
     magnitude: DEFAULT_WORLDGEN_DRAFT.magnitude,
     treeMinHeight: DEFAULT_WORLDGEN_DRAFT.treeMinHeight,
     treeMaxHeight: DEFAULT_WORLDGEN_DRAFT.treeMaxHeight,
-    viewDistance: 1,
+    viewDistance: CHUNK_DEFAULTS.viewDistance,
   })
 
   /** Whether Advanced panel is expanded */
@@ -306,7 +307,7 @@ export const useUiStore = defineStore('ui', () => {
     worldGenDraft.magnitude = DEFAULT_WORLDGEN_DRAFT.magnitude
     worldGenDraft.treeMinHeight = DEFAULT_WORLDGEN_DRAFT.treeMinHeight
     worldGenDraft.treeMaxHeight = DEFAULT_WORLDGEN_DRAFT.treeMaxHeight
-    worldGenDraft.viewDistance = 2
+    worldGenDraft.viewDistance = CHUNK_DEFAULTS.viewDistance
   }
 
   /**

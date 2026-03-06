@@ -1,3 +1,4 @@
+import { useSettingsStore } from '@pinia/settingsStore.js'
 import * as THREE from 'three'
 import CameraRig from '../camera/camera-rig.js'
 import {
@@ -52,11 +53,10 @@ export default class World {
 
   /** 地形：ChunkManager + 暴露 terrainDataManager + 初始网格 */
   _initTerrain() {
+    const settingsStore = useSettingsStore()
+
     this.chunkManager = new ChunkManager({
-      chunkWidth: CHUNK_BASIC_CONFIG.chunkWidth,
-      chunkHeight: CHUNK_BASIC_CONFIG.chunkHeight,
-      viewDistance: CHUNK_BASIC_CONFIG.viewDistance,
-      seed: 2387213640,
+      seed: CHUNK_BASIC_CONFIG.seed,
       terrain: {
         scale: TERRAIN_PARAMS.scale,
         magnitude: TERRAIN_PARAMS.magnitude,
@@ -65,6 +65,10 @@ export default class World {
         fbm: TERRAIN_PARAMS.fbm,
       },
     })
+
+    this.chunkManager.viewDistance = settingsStore.chunkViewDistance
+    this.chunkManager.unloadPadding = settingsStore.chunkUnloadPadding
+
     this.experience.terrainDataManager = this.chunkManager
     this.chunkManager.initInitialGrid()
   }

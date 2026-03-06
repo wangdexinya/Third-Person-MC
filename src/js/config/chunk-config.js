@@ -1,4 +1,9 @@
-// Chunk 基础配置参数
+/**
+ * Chunk 与地形配置 - 静态默认值唯一来源
+ * - CHUNK_BASIC_CONFIG: 引擎常量（chunk 尺寸、视距默认等）
+ * - CHUNK_DEFAULTS: 供 settingsStore 使用的 viewDistance/unloadPadding 默认值
+ * - 用户偏好由 settingsStore 持久化，world.js 在创建 ChunkManager 时注入
+ */
 export const CHUNK_BASIC_CONFIG = {
   chunkWidth: 64, // Chunk 宽度（方块数），决定每个 chunk 在 X/Z 方向上的大小
   chunkHeight: 32, // Chunk 高度（方块数），决定每个 chunk 在 Y 方向上的大小
