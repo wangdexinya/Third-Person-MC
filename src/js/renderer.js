@@ -71,55 +71,38 @@ export default class Renderer {
     this._setupSettingsListeners()
   }
 
-  /**
-   * Setup listeners for settings changes from Settings UI
-   */
+  /** 监听设置 UI 的后期处理变更 */
   _setupSettingsListeners() {
-    emitter.on('settings:postprocess-changed', ({ speedLines }) => {
+    const SPEEDLINE_UNIFORM_MAP = {
+      density: 'uDensity',
+      speed: 'uSpeed',
+      thickness: 'uThickness',
+      minRadius: 'uMinRadius',
+      maxRadius: 'uMaxRadius',
+      randomness: 'uRandomness',
+    }
+
+    emitter.on('settings:postprocess-changed', ({ speedLines, gaze }) => {
       if (speedLines) {
-        // Update speedLines config
         this.postProcessConfig.speedLines.enabled = speedLines.enabled
         this.speedLinePass.enabled = speedLines.enabled
 
         if (speedLines.color) {
           this.postProcessConfig.speedLines.color = speedLines.color
-          this.speedLinePass.uniforms.uColor.value.setRGB(
-            speedLines.color.r / 255,
-            speedLines.color.g / 255,
-            speedLines.color.b / 255,
-          )
+          const { r, g, b } = speedLines.color
+          this.speedLinePass.uniforms.uColor.value.setRGB(r / 255, g / 255, b / 255)
         }
-        if (speedLines.density !== undefined) {
-          this.postProcessConfig.speedLines.density = speedLines.density
-          this.speedLinePass.uniforms.uDensity.value = speedLines.density
-        }
-        if (speedLines.speed !== undefined) {
-          this.postProcessConfig.speedLines.speed = speedLines.speed
-          this.speedLinePass.uniforms.uSpeed.value = speedLines.speed
-        }
-        if (speedLines.thickness !== undefined) {
-          this.postProcessConfig.speedLines.thickness = speedLines.thickness
-          this.speedLinePass.uniforms.uThickness.value = speedLines.thickness
-        }
-        if (speedLines.minRadius !== undefined) {
-          this.postProcessConfig.speedLines.minRadius = speedLines.minRadius
-          this.speedLinePass.uniforms.uMinRadius.value = speedLines.minRadius
-        }
-        if (speedLines.maxRadius !== undefined) {
-          this.postProcessConfig.speedLines.maxRadius = speedLines.maxRadius
-          this.speedLinePass.uniforms.uMaxRadius.value = speedLines.maxRadius
-        }
-        if (speedLines.randomness !== undefined) {
-          this.postProcessConfig.speedLines.randomness = speedLines.randomness
-          this.speedLinePass.uniforms.uRandomness.value = speedLines.randomness
+
+        for (const [key, uniformName] of Object.entries(SPEEDLINE_UNIFORM_MAP)) {
+          if (speedLines[key] !== undefined) {
+            this.postProcessConfig.speedLines[key] = speedLines[key]
+            this.speedLinePass.uniforms[uniformName].value = speedLines[key]
+          }
         }
       }
-    })
 
-    emitter.on('settings:postprocess-changed', ({ gaze }) => {
       if (gaze) {
         this.postProcessConfig.gaze.enabled = gaze.enabled
-        // Note: gazePass.enabled is controlled in the update loop for performance
         if (gaze.intensity !== undefined) {
           this.postProcessConfig.gaze.intensity = gaze.intensity
           this.gazePass.uniforms.uIntensity.value = gaze.intensity
@@ -417,18 +400,13 @@ export default class Renderer {
   }
 
   update() {
-    // 更新速度线时间 uniform
-    this.speedLinePass.uniforms.uTime.value
-      = this.experience.time.elapsed * 0.001
-
-    // 更新凝视恐惧时间 uniform，并在强度极低时禁用以节省性能
-    this.gazePass.uniforms.uTime.value = this.experience.time.elapsed * 0.001
+    const elapsedSec = this.experience.time.elapsed * 0.001
+    this.speedLinePass.uniforms.uTime.value = elapsedSec
+    this.gazePass.uniforms.uTime.value = elapsedSec
+    // 在强度极低时禁用以提高性能
     this.gazePass.enabled = this.postProcessConfig.gaze.enabled && this.gazePass.uniforms.uIntensity.value > 0.005
 
-    // 使用 EffectComposer 渲染（包含所有后期处理）
     this.composer.render()
-
-    // 在主场景渲染完成后，渲染玩家预览覆盖层
     this._renderPlayerPreview()
   }
 
@@ -442,8 +420,7 @@ export default class Renderer {
   }
 
   /**
-   * 渲染玩家预览（使用 Viewport 直接渲染到主画布左下角）
-   * 采用 setViewport + setScissor 方案，避免 GPU→CPU 回读
+   * 渲染玩家预览（Viewport + setScissor，避免 GPU→CPU 回读）
    */
   _renderPlayerPreview() {
     if (!this.playerPreview?.enabled)
@@ -452,38 +429,24 @@ export default class Renderer {
     const preview = this.playerPreview
     preview.update()
 
-    // 获取预览配置
-    const size = preview.config.size
-    const margin = preview.config.margin
+    const { size, margin } = preview.config
     const pixelRatio = this.sizes.pixelRatio
-
-    // 计算实际像素位置（考虑 pixelRatio）
-    // WebGL viewport 使用左下角为原点
     const x = Math.floor(margin.left * pixelRatio)
     const y = Math.floor(margin.bottom * pixelRatio)
-    const width = Math.floor(size * pixelRatio)
-    const height = Math.floor(size * pixelRatio)
+    const wh = Math.floor(size * pixelRatio)
 
-    // 保存当前状态
-    const currentSceneBackground = this.scene.background
-
-    // 临时移除场景背景
+    const savedBackground = this.scene.background
     this.scene.background = null
 
-    // 启用裁剪测试，限制渲染区域
     this.instance.setScissorTest(true)
-    this.instance.setScissor(x, y, width, height)
-    this.instance.setViewport(x, y, width, height)
-
-    // this.instance.setClearColor(0x000000, 0)
+    this.instance.setScissor(x, y, wh, wh)
+    this.instance.setViewport(x, y, wh, wh)
     this.instance.clear(false, true, false)
-    // 渲染预览场景
     this.instance.render(this.scene, preview.getCamera())
 
-    // 恢复状态
     this.instance.setScissorTest(false)
     this.instance.setViewport(0, 0, this.sizes.width * pixelRatio, this.sizes.height * pixelRatio)
-    this.scene.background = currentSceneBackground
+    this.scene.background = savedBackground
   }
 
   /**
@@ -497,26 +460,15 @@ export default class Renderer {
   }
 
   destroy() {
-    // Dispose all passes
-    if (this.renderPass)
-      this.renderPass.dispose?.()
-    if (this.bloomPass)
-      this.bloomPass.dispose?.()
-    if (this.speedLinePass)
-      this.speedLinePass.dispose?.()
-    if (this.gazePass)
-      this.gazePass.dispose?.()
-    if (this.outputPass)
-      this.outputPass.dispose?.()
+    const passes = [this.renderPass, this.bloomPass, this.speedLinePass, this.gazePass, this.outputPass]
+    passes.forEach(p => p?.dispose?.())
 
-    // Dispose composer and its render targets
     if (this.composer) {
       this.composer.renderTarget1?.dispose()
       this.composer.renderTarget2?.dispose()
       this.composer.dispose?.()
     }
 
-    // Force context loss and cleanup renderer
     if (this.instance) {
       this.instance.forceContextLoss()
       this.instance.dispose()
