@@ -46,9 +46,9 @@ const DEFAULT_SETTINGS = {
   envAmbientIntensity: 0.75,
   envFogDensity: 0.01,
 
-  // Chunks
-  chunkViewDistance: 2,
-  chunkUnloadPadding: 1,
+  // Chunks（CHUNK_DEFAULTS 来自 chunk-config，经 settings-presets re-export）
+  chunkViewDistance: CHUNK_DEFAULTS.viewDistance,
+  chunkUnloadPadding: CHUNK_DEFAULTS.unloadPadding,
 
   // Front View Preview
   frontViewEnabled: true,
