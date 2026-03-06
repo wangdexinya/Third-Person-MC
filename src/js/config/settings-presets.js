@@ -145,12 +145,9 @@ export const ENV_DEFAULTS = {
 }
 
 // ========================================
-// Chunk Presets (defaults)
+// Chunk Presets (defaults) - re-export from chunk-config
 // ========================================
-export const CHUNK_DEFAULTS = {
-  viewDistance: 1,
-  unloadPadding: 1,
-}
+export { CHUNK_DEFAULTS } from './chunk-config.js'
 
 // ========================================
 // Preset names for UI display

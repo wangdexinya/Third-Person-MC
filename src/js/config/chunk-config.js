@@ -49,3 +49,9 @@ export const WATER_PARAMS = {
   flowSpeedX: 0.5, // 水流 X 方向速度（范围: -0.2-0.2），控制水面纹理在 X 方向的流动速度
   flowSpeedY: 0.00, // 水流 Y 方向速度（范围: -0.2-0.2），控制水面纹理在 Y 方向的流动速度
 }
+
+// 供 settingsStore 使用的默认值（viewDistance/unloadPadding 用户可调）
+export const CHUNK_DEFAULTS = {
+  viewDistance: CHUNK_BASIC_CONFIG.viewDistance,
+  unloadPadding: CHUNK_BASIC_CONFIG.unloadPadding,
+}
