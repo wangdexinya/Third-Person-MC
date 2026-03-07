@@ -52,7 +52,81 @@
     "prev": "Back",
     "next": "Next",
     "done": "Done",
-    "mainMenu": "Main Menu"
+    "mainMenu": "Main Menu",
+    "pages": {
+      "movement_camera": {
+        "title": "Move & Camera",
+        "body": {
+          "0": "Move with WASD or Arrow Keys.",
+          "1": "Hold Shift to sprint.",
+          "2": "Hold V to sneak for control.",
+          "3": "Press Q or E to switch camera shoulder (left/right).",
+          "4": "Hold Tab for telescope zoom. Press Y to look back."
+        },
+        "keybinds": {
+          "0": { "action": "Move", "key": "W/A/S/D (or Arrow Keys)" },
+          "1": { "action": "Jump", "key": "Space" },
+          "2": { "action": "Sprint", "key": "Shift" },
+          "3": { "action": "Sneak", "key": "V" },
+          "4": { "action": "Camera Left", "key": "Q" },
+          "5": { "action": "Camera Right", "key": "E" },
+          "6": { "action": "Telescope", "key": "Tab" },
+          "7": { "action": "Look Back", "key": "Y" }
+        }
+      },
+      "combat": {
+        "title": "Combat Basics",
+        "body": {
+          "0": "Press Z for a light attack (combo).",
+          "1": "Press X for a heavy attack.",
+          "2": "Hold C to block and time your defense."
+        },
+        "keybinds": {
+          "0": { "action": "Light Attack", "key": "Z" },
+          "1": { "action": "Heavy Attack", "key": "X" },
+          "2": { "action": "Block", "key": "C" }
+        }
+      },
+      "build_edit": {
+        "title": "Build / Edit",
+        "body": {
+          "0": "Left click to mine or break blocks.",
+          "1": "Right click to place blocks.",
+          "2": "Same as vanilla Minecraft."
+        },
+        "keybinds": {
+          "0": { "action": "Mine / Break", "key": "Mouse Left" },
+          "1": { "action": "Place", "key": "Mouse Right" }
+        }
+      },
+      "achievements": {
+        "title": "Achievements & Progress",
+        "body": {
+          "0": "Complete actions to unlock achievements.",
+          "1": "View your progress in the Achievements menu from Main Menu or Pause Menu.",
+          "2": "Achievements reset when you create a new world."
+        },
+        "keybinds": {
+          "0": { "action": "Open Menu", "key": "Esc" },
+          "1": { "action": "Achievements (in menu)", "key": "Main Menu / Pause" }
+        }
+      },
+      "tips_ui": {
+        "title": "Tips & UI",
+        "body": {
+          "0": "Stay calm: move, hit, reset.",
+          "1": "Sprint to reposition and commit when it's safe.",
+          "2": "Sneak (V) for tighter control when you need it.",
+          "3": "Press Esc anytime to return to the menu.",
+          "4": "Press R to respawn if stuck.",
+          "5": "Settings can adjust view distance."
+        },
+        "keybinds": {
+          "0": { "action": "Open Menu", "key": "Esc" },
+          "1": { "action": "Respawn", "key": "R" }
+        }
+      }
+    }
   },
   "skin": {
     "steve": "Steve",

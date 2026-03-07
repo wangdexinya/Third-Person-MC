@@ -1,9 +1,9 @@
 <script setup>
 import { useUiStore } from '@pinia/uiStore.js'
 /**
- * HowToPlay - Main Menu paged tutorial (placeholder-first)
- * - 先用 div 画面占位符把页面结构与交互跑通
- * - 后续图片生成完成后，再替换占位符为 <img>
+ * HowToPlay - Main Menu paged tutorial
+ * - 2x2 四格图，单张合成图用 CSS 拆格显示
+ * - 文案与按键表通过 i18n 获取
  */
 import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
@@ -11,87 +11,19 @@ import { useI18n } from 'vue-i18n'
 const ui = useUiStore()
 const { t } = useI18n()
 
-// 说明：此处文案与键位来自计划书（极简指令风 / 纯英文）
+// 页面配置：文案与按键表通过 i18n 获取（howto.pages.{pageKey}）
 const pages = [
-  {
-    id: 'quickstart',
-    title: 'Quick Start',
-    illustrationLayout: 'comic2x2',
-    images: ['1-1.png', '1-2.png', '1-3.png', '1-4.png'],
-    body: [
-      'Pick a portal and step in.',
-      'Explore fast, fight smart, and stay moving.',
-      'If you get lost, come back and reset your run.',
-    ],
-    keybinds: [{ action: 'Open Menu', key: 'Esc' }],
-  },
-  {
-    id: 'movement-camera',
-    title: 'Move & Camera',
-    illustrationLayout: 'comic2x2',
-    images: ['2-1.png', '2-2.png', '2-3.png', '2-4.png'],
-    body: [
-      'Move with WASD or Arrow Keys.',
-      'Hold Shift to sprint.',
-      'Hold V to sneak for control.',
-      'Press Tab to switch camera side.',
-    ],
-    keybinds: [
-      { action: 'Move', key: 'W/A/S/D (or Arrow Keys)' },
-      { action: 'Jump', key: 'Space' },
-      { action: 'Sprint', key: 'Shift' },
-      { action: 'Sneak', key: 'V' },
-      { action: 'Switch Camera Side', key: 'Tab' },
-    ],
-  },
-  {
-    id: 'combat',
-    title: 'Combat Basics',
-    illustrationLayout: 'comic2x2',
-    images: ['3-1.png', '3-2.png', '3-3.png', '3-4.png'],
-    body: [
-      'Press Z for a light attack.',
-      'Press X for a heavy attack.',
-      'Press C to block and time your defense.',
-    ],
-    keybinds: [
-      { action: 'Light Attack', key: 'Z' },
-      { action: 'Heavy Attack', key: 'X' },
-      { action: 'Block', key: 'C' },
-    ],
-  },
-  {
-    id: 'build-edit',
-    title: 'Build / Edit',
-    illustrationLayout: 'comic2x2',
-    images: ['4-1.png', '4-2.png', '4-3.png', '4-4.png'],
-    body: [
-      'Press Q to toggle block edit mode.',
-      'Place or remove blocks to shape your path.',
-      'Use edits to gain height, cover, or escape routes.',
-    ],
-    keybinds: [{ action: 'Toggle Block Edit Mode', key: 'Q' }],
-  },
-  {
-    id: 'tips-ui',
-    title: 'Tips & UI',
-    illustrationLayout: 'comic2x2',
-    images: ['5-1.png', '5-2.png', '5-3.png', '5-4.png'],
-    body: [
-      'Stay calm: move, hit, reset.',
-      'Sprint to reposition and commit when it’s safe.',
-      'Sneak (V) for tighter control when you need it.',
-      'Press Esc anytime to return to the menu.',
-      'Press R to respawn if stuck.',
-      'Settings can adjust view distance.',
-    ],
-    keybinds: [
-      { action: 'Open Menu', key: 'Esc' },
-      // Optional page navigation:
-      // { action: 'Prev/Next Page', key: 'ArrowLeft / ArrowRight' },
-    ],
-  },
+  { id: 'movement-camera', image: '1.png', bodyCount: 5, keybindCount: 8 },
+  { id: 'combat', image: '2.png', bodyCount: 3, keybindCount: 3 },
+  { id: 'build-edit', image: '3.png', bodyCount: 3, keybindCount: 2 },
+  { id: 'achievements', image: '4.png', bodyCount: 3, keybindCount: 2 },
+  { id: 'tips-ui', image: '5.png', bodyCount: 6, keybindCount: 2 },
 ]
+
+/** 将 page id 转为 i18n key（movement-camera -> movement_camera） */
+function pageI18nKey(id) {
+  return id.replace(/-/g, '_')
+}
 
 const currentIndex = ref(0)
 const currentPage = computed(() => pages[currentIndex.value])
@@ -107,7 +39,6 @@ function goBack() {
     currentIndex.value -= 1
     return
   }
-  // 第 1 页返回主菜单 root
   ui.exitHowToPlay()
 }
 
@@ -116,12 +47,10 @@ function goNext() {
     currentIndex.value += 1
     return
   }
-  // 第 5 页 Done 返回主菜单 root
   ui.exitHowToPlay()
 }
 
 function handleKeydown(event) {
-  // 注意：ESC 由 UiRoot 的 ui:escape 统一处理（store 会回到 root）
   if (event.key === 'ArrowLeft') {
     event.preventDefault()
     goBack()
@@ -158,46 +87,48 @@ onUnmounted(() => {
 
     <main class="mc-panel howto__panel">
       <div class="howto__panelTitle mc-text">
-        {{ currentPage.title }}
+        {{ $t(`howto.pages.${pageI18nKey(currentPage.id)}.title`) }}
       </div>
 
-      <!-- 画面占位符（后续替换为图片） -->
+      <!-- 2x2 四格图：单张合成图用 CSS 拆成四格，hover 有动效 -->
       <div class="howto__illustration">
         <div class="illus illus--comic">
-          <div v-for="imgName in currentPage.images" :key="imgName" class="comicCell">
-            <img
-              :src="`/img/howToPlayer/${imgName}`"
-              :alt="imgName"
-              class="comicImg"
-              loading="lazy"
-            >
-          </div>
+          <div
+            v-for="idx in 4"
+            :key="idx"
+            class="comicCell comicCell--quadrant"
+            :style="{ backgroundImage: `url(/img/howToPlayer/${currentPage.image})` }"
+          />
         </div>
       </div>
 
-      <!-- 文案 -->
+      <!-- 文案（i18n） -->
       <ul class="howto__body">
-        <li v-for="line in currentPage.body" :key="line" class="howto__bodyLine mc-text">
-          {{ line }}
+        <li
+          v-for="i in currentPage.bodyCount"
+          :key="i"
+          class="howto__bodyLine mc-text"
+        >
+          {{ $t(`howto.pages.${pageI18nKey(currentPage.id)}.body.${i - 1}`) }}
         </li>
       </ul>
 
-      <!-- 按键表（可选但推荐） -->
-      <div v-if="currentPage.keybinds?.length" class="howto__keybinds">
+      <!-- 按键表（i18n） -->
+      <div v-if="currentPage.keybindCount" class="howto__keybinds">
         <div class="howto__keybindsTitle mc-text">
           {{ $t('howto.controls') }}
         </div>
         <div class="howto__keybindGrid">
           <div
-            v-for="item in currentPage.keybinds"
-            :key="`${item.action}:${item.key}`"
+            v-for="i in currentPage.keybindCount"
+            :key="i"
             class="howto__keybindRow"
           >
             <div class="howto__keybindAction mc-text">
-              {{ item.action }}
+              {{ $t(`howto.pages.${pageI18nKey(currentPage.id)}.keybinds.${i - 1}.action`) }}
             </div>
             <div class="howto__keybindKey mc-text">
-              {{ item.key }}
+              {{ $t(`howto.pages.${pageI18nKey(currentPage.id)}.keybinds.${i - 1}.key`) }}
             </div>
           </div>
         </div>
@@ -216,14 +147,18 @@ onUnmounted(() => {
 </template>
 
 <style scoped>
+/* 保证上一页/下一页按钮组始终可见 */
 .howto {
   width: min(920px, 92vw);
+  max-height: 100vh;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  overflow: hidden;
 }
 
 .howto__header {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -243,6 +178,9 @@ onUnmounted(() => {
 }
 
 .howto__panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   width: 100%;
   padding: 16px;
   display: flex;
@@ -282,24 +220,35 @@ onUnmounted(() => {
 
 .comicCell {
   border: 2px solid rgba(0, 0, 0, 0.18);
-  background:
-    linear-gradient(135deg, rgba(0, 0, 0, 0.08), rgba(0, 0, 0, 0.02)),
-    radial-gradient(100% 100% at 30% 20%, rgba(140, 220, 255, 0.22), rgba(0, 0, 0, 0) 60%),
-    radial-gradient(100% 100% at 70% 80%, rgba(255, 170, 120, 0.18), rgba(0, 0, 0, 0) 55%);
   box-shadow: inset 0 0 0 2px rgba(255, 255, 255, 0.06);
   overflow: hidden;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  min-height: 0;
+  transition:
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.25s ease,
+    filter 0.25s ease;
 }
 
-.comicImg {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  image-rendering: pixelated;
-  display: block;
+.comicCell:hover {
+  transform: scale(1.06) rotate(1deg);
+  box-shadow:
+    inset 0 0 0 2px rgba(255, 255, 255, 0.2),
+    0 4px 16px rgba(255, 220, 100, 0.25);
+  filter: brightness(1.08);
 }
+
+/* 单张 2x2 图拆成四格 */
+.comicCell--quadrant {
+  background-color: rgba(0, 0, 0, 0.1);
+  background-size: 200% 200%;
+  background-repeat: no-repeat;
+  image-rendering: pixelated;
+}
+
+.comicCell--quadrant:nth-child(1) { background-position: 0 0; }
+.comicCell--quadrant:nth-child(2) { background-position: 100% 0; }
+.comicCell--quadrant:nth-child(3) { background-position: 0 100%; }
+.comicCell--quadrant:nth-child(4) { background-position: 100% 100%; }
 
 .howto__body {
   margin: 0;
@@ -351,6 +300,7 @@ onUnmounted(() => {
 }
 
 .howto__footer {
+  flex-shrink: 0;
   width: 100%;
 }
 </style>
