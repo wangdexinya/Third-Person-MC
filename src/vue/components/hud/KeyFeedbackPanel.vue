@@ -18,7 +18,7 @@ const keys = reactive({
   c: false,
   v: false,
   q: false,
-  r: false,
+  e: false,
 })
 
 /**
@@ -35,7 +35,7 @@ function handleInputUpdate(inputKeys) {
   keys.c = inputKeys.c || false
   keys.v = inputKeys.v || false
   keys.q = inputKeys.q || false
-  keys.r = inputKeys.r || false
+  keys.e = inputKeys.e || false
 }
 
 /**
@@ -52,7 +52,7 @@ function resetKeys() {
   keys.c = false
   keys.v = false
   keys.q = false
-  keys.r = false
+  keys.e = false
 }
 
 onMounted(() => {
@@ -78,8 +78,8 @@ onUnmounted(() => {
       <div class="key-cap" :class="{ pressed: keys.w }">
         W
       </div>
-      <div class="key-cap" :class="{ pressed: keys.r }">
-        R
+      <div class="key-cap" :class="{ pressed: keys.e }">
+        E
       </div>
     </div>
     <div class="key-row">

@@ -4,7 +4,7 @@ export const CAMERA_RIG_CONFIG = {
   // 第三人称相机配置
   follow: {
     // 相机相对于玩家的偏移（玩家在右下角）
-    offset: new THREE.Vector3(3, 1.5, 3), // x: 右侧, y: 上方, z: 后方
+    offset: new THREE.Vector3(2, 1.5, 3.5), // x: 右侧, y: 上方, z: 后方
     // 目标点相对于玩家的偏移（看向前方中央）
     targetOffset: new THREE.Vector3(0, 1.5, -5.5), // 看向玩家前方5.5米，高度1.5米
     // 平滑跟随速度 (位置惯性)
@@ -24,7 +24,7 @@ export const CAMERA_RIG_CONFIG = {
   },
   // 正后方居中拔高模式 (Tab 第三态)
   centerElevated: {
-    heightBoost: 1.0, // Y 轴额外拔高 (米)
+    heightBoost: 0.5, // Y 轴额外拔高 (米)
   },
   // 后视镜 (Y 键按住)
   rearView: {

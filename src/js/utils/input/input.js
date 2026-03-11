@@ -21,7 +21,7 @@ export default class InputManager {
       q: false,
       e: false,
       tab: false,
-      y: false,
+      backtick: false,
     }
 
     // 鼠标按键状态
@@ -157,8 +157,9 @@ export default class InputManager {
         }
         this.keys.r = isPressed
         break
-      case 'y':
-        this.keys.y = isPressed
+      case '`':
+      case '·':
+        this.keys.backtick = isPressed
         // 后视镜：持续状态模式（按住生效，松开恢复）
         emitter.emit('input:rear_view', isPressed)
         break

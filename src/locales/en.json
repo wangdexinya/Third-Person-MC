@@ -61,7 +61,7 @@
           "1": "Hold Shift to sprint.",
           "2": "Hold V to sneak for control.",
           "3": "Press Q or E to switch camera shoulder (left/right).",
-          "4": "Hold Tab for telescope zoom. Press Y to look back."
+          "4": "Hold Tab for telescope zoom. Press ~ to look back."
         },
         "keybinds": {
           "0": { "action": "Move", "key": "W/A/S/D (or Arrow Keys)" },
@@ -71,7 +71,7 @@
           "4": { "action": "Camera Left", "key": "Q" },
           "5": { "action": "Camera Right", "key": "E" },
           "6": { "action": "Telescope", "key": "Tab" },
-          "7": { "action": "Look Back", "key": "Y" }
+          "7": { "action": "Look Back", "key": "~" }
         }
       },
       "combat": {
@@ -166,7 +166,7 @@
       "hiker": { "title": "Hiker", "desc": "Explore far from the spawn point." },
       "rage_quit": { "title": "Inept", "desc": "Punch the air continuously." },
       "who_am_i": { "title": "Who Am I, Where Am I", "desc": "Rapidly switch camera perspectives." },
-      "first_rear_view": { "title": "Look Back", "desc": "Press Y to look back for the first time." },
+      "first_rear_view": { "title": "Look Back", "desc": "Press ~ to look back for the first time." },
       "menuTitle": "Achievements",
       "unlocked": "Unlocked",
       "locked": "Locked",

@@ -61,7 +61,7 @@
           "1": "按住 Shift 冲刺。",
           "2": "按住 V 潜行以获得更精准的控制。",
           "3": "按 Q 或 E 切换左肩/右肩视角。",
-          "4": "按住 Tab 使用望远镜缩放。按 Y 回头看。"
+          "4": "按住 Tab 使用望远镜缩放。按 ~ 回头看。"
         },
         "keybinds": {
           "0": { "action": "移动", "key": "W/A/S/D（或方向键）" },
@@ -71,7 +71,7 @@
           "4": { "action": "左肩视角", "key": "Q" },
           "5": { "action": "右肩视角", "key": "E" },
           "6": { "action": "望远镜", "key": "Tab" },
-          "7": { "action": "回头看", "key": "Y" }
+          "7": { "action": "回头看", "key": "~" }
         }
       },
       "combat": {
@@ -166,7 +166,7 @@
       "hiker": { "title": "徒步旅行者", "desc": "探索远离出生点的区域" },
       "rage_quit": { "title": "无能狂怒", "desc": "连续多次挥拳打空气" },
       "who_am_i": { "title": "我是谁我在那", "desc": "短时间内快速切换视角" },
-      "first_rear_view": { "title": "回头看", "desc": "首次按Y键回头看" },
+      "first_rear_view": { "title": "回头看", "desc": "首次按~键回头看" },
       "menuTitle": "成就系统",
       "unlocked": "已解锁",
       "locked": "未解锁",
